@@ -3,8 +3,10 @@ package com.zkteco.autk.components;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.TextureView;
+import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.ImageView;
 
 import com.zkteco.autk.R;
@@ -23,6 +25,8 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> {
     private ImageView mFaceRect;
     private TextureView mPreVRect;
     private RoundProgressBar mRoundProgress;
+    private Button mEnroll;
+    private boolean isEnrolling = false;
 
     private int mProgress = 0;
 
@@ -30,12 +34,12 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mPresenter.init();
-        initViews();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        mPresenter.setSurfaceTextureListener(mPreVRect);
         mPresenter.resume();
     }
 
@@ -70,13 +74,26 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> {
         ViewGroup.LayoutParams params = mPreVRect.getLayoutParams();
         params.width = wm.getDefaultDisplay().getWidth();
         params.height = (int) (params.width * (640.0f / 480.0f));
-        if (Utils.DEBUG)
-            Logger.d(TAG, "surface view width = " + params.width + ", height = " + params.height);
+        Logger.d(TAG, "surface view width = " + params.width + ", height = " + params.height);
 
         mPreVRect.setLayoutParams(params);
         mFaceRect.setLayoutParams(params);
 
-        mPresenter.setSurfaceTextureListener(mPreVRect);
+        mEnroll = (Button) findViewById(R.id.enroll);
+        mEnroll.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (isEnrolling) {
+                    mPresenter.identifyFace();
+                    mEnroll.setText(R.string.button_enroll);
+                    isEnrolling = false;
+                } else {
+                    mPresenter.enrollFace();
+                    mEnroll.setText(R.string.button_identify);
+                    isEnrolling = true;
+                }
+            }
+        });
     }
 
     @Override
@@ -111,5 +128,19 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> {
                 mRoundProgress.setProgress(mProgress);
             }
         });
+    }
+
+    public void fillProgress() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mProgress = 100;
+                mRoundProgress.setProgress(mProgress);
+            }
+        });
+    }
+
+    public void updateUI() {
+
     }
 }

@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.widget.Toast;
 
 import com.zkteco.autk.presenters.BasePresenter;
+import com.zkteco.autk.utils.PermissionUtil;
 
 /**
  * author: Created by Ho Dao on 2019/7/28 0028 23:04
@@ -22,8 +23,9 @@ public abstract class BaseActivity<P extends BasePresenter> extends Activity imp
         setContentView(getLayoutId());
 
         initPresenter();
-        mPresenter.attachView(this);
-
+        if (mPresenter != null) {
+            mPresenter.attachView(this);
+        }
         initViews();
     }
 
@@ -35,7 +37,16 @@ public abstract class BaseActivity<P extends BasePresenter> extends Activity imp
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mPresenter.detachView();
+        if (mPresenter != null) {
+            mPresenter.detachView();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(
+            final int requestCode, final String[] permissions, final int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        PermissionUtil.getInstance().onRequestPermissionsResult(this, requestCode, permissions, grantResults);
     }
 
     public void toast(final String msg) {

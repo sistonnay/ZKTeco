@@ -7,6 +7,7 @@ import com.zkteco.autk.camera.CameraIdentify;
 import com.zkteco.autk.components.EnrollActivity;
 import com.zkteco.autk.models.EnrollModel;
 import com.zkteco.autk.models.TimerTool;
+import com.zkteco.autk.models.ZKLiveFaceManager;
 import com.zkteco.autk.utils.Logger;
 import com.zkteco.autk.utils.Utils;
 
@@ -18,11 +19,11 @@ import java.io.IOException;
  */
 public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> {
     private static final String TAG = Utils.TAG + "#" + EnrollPresenter.class.getSimpleName();
-    private static final boolean DEBUG = Utils.DEBUG;
 
-    private Activity mActivity = null;
+    private EnrollActivity mActivity = null;
     private CameraIdentify mCamera = null;
     private Object mLock = new Object();
+    private boolean hasTextureListener = false;
 
     public void init() {
         mActivity = mView.get();
@@ -31,7 +32,7 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
     }
 
     private void tryStartCamera() {
-        if (DEBUG) TimerTool.getInstance().start("-tryStartCamera:");
+        TimerTool.getInstance().start("-tryStartCamera:");
         if (mCamera != null) {
             if (!mCamera.isOpened()) {
                 synchronized (mLock) {
@@ -49,7 +50,7 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
                             } catch (IOException e) {
                                 Logger.e(TAG, "Camera Preview Exception:", e);
                             }
-                            if (DEBUG) TimerTool.getInstance().stop( "-tryStartCamera:");
+                            TimerTool.getInstance().stop( "-tryStartCamera:");
                         }
                     }
                 }
@@ -58,7 +59,10 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
     }
 
     public void setSurfaceTextureListener(TextureView textureView) {
-        textureView.setSurfaceTextureListener(mCamera);
+        if (!hasTextureListener) {
+            textureView.setSurfaceTextureListener(mCamera);
+            hasTextureListener = true;
+        }
     }
 
     public void resume() {
@@ -68,14 +72,27 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
     public void pause() {
         if (mCamera != null) {
             mCamera.stopPreview();
-            if (DEBUG) Logger.d(TAG, "activity onPause and camera preview stopped");
+            Logger.d(TAG, "activity onPause and camera preview stopped");
         }
     }
 
     public void destroy() {
         if (mCamera != null) {
             mCamera.release();
-            if (DEBUG) Logger.d(TAG, "activity onDestroy and camera released");
+            Logger.d(TAG, "activity onDestroy and camera released");
         }
     }
+
+    public void enrollFace() {
+        if (mCamera != null) {
+            mCamera.setEnrollOption(true);
+        }
+    }
+
+    public void identifyFace() {
+        if (mCamera != null) {
+            mCamera.setIdentifyOption(true);
+        }
+    }
+
 }

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.zkteco.autk.views.CircleProgress
+        android:id="@+id/progress"
+        android:layout_width="160dp"
+        android:layout_height="160dp"
+        android:layout_centerInParent="true" />
+
+    <TextView
+        android:id="@+id/alert_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="@string/text_welcome"
+        android:textSize="20sp"
+        android:gravity="center"
+        android:layout_below="@+id/progress"/>
+
+</RelativeLayout>

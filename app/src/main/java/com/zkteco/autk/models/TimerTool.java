@@ -32,12 +32,12 @@ public class TimerTool {
 
     public void start(String fun) {
         oldMillis = System.currentTimeMillis();
-        if (Utils.DEBUG) Logger.v(TAG, fun + " start at " + oldMillis);
+        Logger.v(TAG, fun + " start at " + oldMillis);
     }
 
     public void stop(String fun) {
         long newMillis = System.currentTimeMillis();
-        if (Utils.DEBUG) Logger.v(TAG, fun + " stop at " + newMillis);
-        if (Utils.DEBUG) Logger.v(TAG, fun + " total spend " + (newMillis - oldMillis));
+        Logger.v(TAG, fun + " stop at " + newMillis);
+        Logger.v(TAG, fun + " total spend " + (newMillis - oldMillis));
     }
 }

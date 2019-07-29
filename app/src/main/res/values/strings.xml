@@ -1,4 +1,17 @@
 <resources>
     <string name="app_name">ZKTeco</string>
     <string name="setup_enrollment_message">Keep the top of your head and the bottom of your chin within the circle</string>
+    <string name="dialog_title_auth">Active State</string>
+    <string name="dialog_message_auth">Active failed\nHardwareId:%1$s\nDeviceFingerprintPath:\n%2$s</string>
+    <string name="text_welcome">initializing...</string>
+    <string name="choose_lic_file_failed">choose license file failed</string>
+    <string name="init_algorithm_success">init algorithm success</string>
+    <string name="init_algorithm_fail">init algorithm fail</string>
+    <string name="button_enroll">enroll face</string>
+    <string name="button_identify">identify face</string>
+    <string name="extract_template_fail">extract template fail</string>
+    <string name="db_add_template_success">db add template success</string>
+    <string name="db_add_template_fail">db add template fail</string>
+    <string name="identify_fail">identify fail</string>
+    <string name="identify_success">identify success</string>
 </resources>

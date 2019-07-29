@@ -10,24 +10,23 @@ import com.zkteco.autk.utils.Logger;
 import com.zkteco.autk.utils.Utils;
 
 import java.io.IOException;
+import java.security.Policy;
 import java.util.List;
 
 /**
  * author: Created by Ho Dao on 2019/7/29 0029 02:26
  * email: 372022839@qq.com (github: sistonnay)
  */
-public abstract class CameraForeground extends CameraBase implements Camera.PreviewCallback, TextureView.SurfaceTextureListener{
+public abstract class CameraForeground<A extends Activity> extends CameraBase implements Camera.PreviewCallback, TextureView.SurfaceTextureListener{
     private static final String TAG = Utils.TAG + "#" + CameraForeground.class.getSimpleName();
-
-    private static final boolean DEBUG = Utils.DEBUG;
 
     private int mPreviewWidth = 640;
     private int mPreviewHeight = 480;
     private int mPreviewFormat = ImageFormat.NV21;
 
-    protected Activity mContext;
+    protected A mContext;
 
-    public CameraForeground( Activity context) {
+    public CameraForeground(A context) {
         super();
         mContext = context;
     }
@@ -49,7 +48,7 @@ public abstract class CameraForeground extends CameraBase implements Camera.Prev
 
     @Override
     public void startPreview() throws IOException {
-        if (isOpened()) {
+        if (!isOpened()) {
             Logger.e(TAG, "Camera is not opened yet");
             return;
         }
@@ -59,23 +58,23 @@ public abstract class CameraForeground extends CameraBase implements Camera.Prev
         }
 
         Camera.Size size = getOptimalPreviewSize(mPreviewWidth, mPreviewHeight);
-        if (DEBUG)
-            Logger.d(TAG, "PreviewWidth = " + size.width + ", PreviewHeight = " + size.height);
-        getParameters().setPreviewSize(size.width, size.height);
-        getParameters().setPreviewFormat(mPreviewFormat);
-
-        List<String> focusModes = getParameters().getSupportedFocusModes();
-        if (focusModes.contains("continuous-video")) {
-            getParameters().setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
-        }
-
+        Logger.d(TAG, "PreviewWidth = " + size.width + ", PreviewHeight = " + size.height);
+        Camera.Parameters parameters = getParameters();
+        parameters.setPreviewSize(size.width, size.height);
+        setParameters(parameters);
+//        List<String> focusModes = getParameters().getSupportedFocusModes();
+//        if (focusModes.contains("continuous-video")) {
+//            getParameters().setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+//        }
+//
         int surfaceRotation = mContext.getWindowManager().getDefaultDisplay().getRotation();
         setDisplayOrientation(surfaceRotation);
 
+        getParameters().setPreviewFormat(mPreviewFormat);
         setPreviewCallback(this);
 
         super.startPreview();
-        if (DEBUG) Logger.d(TAG, "Camera started preview!");
+        Logger.d(TAG, "Camera started preview!");
     }
 
     @Override

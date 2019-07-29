@@ -17,8 +17,6 @@ import java.util.List;
 public class CameraBase {
     private static final String TAG = Utils.TAG + "#" + CameraBase.class.getSimpleName();
 
-    private static final boolean DEBUG = Utils.DEBUG;
-
     private int mBackId = 0;
     private int mFrontId = 0;
     private int mCurrentId = 0;
@@ -27,7 +25,6 @@ public class CameraBase {
 
     private Camera mCamera;
     private Camera.CameraInfo mCameraInfo;
-    private Camera.Parameters mParameters;
     private Camera.PreviewCallback mPreviewCallback;
     private List<Camera.Size> mSupportedPreviewSizes;
 
@@ -65,7 +62,11 @@ public class CameraBase {
     }
 
     public Camera.Parameters getParameters() {
-        return mParameters;
+        return mCamera.getParameters();
+    }
+
+    public void setParameters(Camera.Parameters parameters) {
+        mCamera.setParameters(parameters);
     }
 
     public boolean isPreview() {
@@ -79,7 +80,7 @@ public class CameraBase {
     protected void open(int id) {
         synchronized (mLock) {
             if (isOpened) {
-                if (DEBUG) Logger.d(TAG, "camera has been opened really");
+                Logger.d(TAG, "camera has been opened really");
                 return;
             }
             if (id != mFrontId && id != mBackId) {
@@ -87,14 +88,13 @@ public class CameraBase {
                 return;
             }
             mCurrentId = id;
-            if (DEBUG) Logger.d(TAG, "the current camera id : " + mCurrentId);
+            Logger.d(TAG, "the current camera id : " + mCurrentId);
             mCamera = Camera.open(mCurrentId);
-            mParameters = mCamera.getParameters();
-            mSupportedPreviewSizes = mParameters.getSupportedPreviewSizes();
+            mSupportedPreviewSizes = mCamera.getParameters().getSupportedPreviewSizes();
             mCameraInfo = new Camera.CameraInfo();
             Camera.getCameraInfo(mCurrentId, mCameraInfo);
             isOpened = true;
-            if (DEBUG) Logger.d(TAG, "camera " + mCurrentId + " opened success");
+            Logger.d(TAG, "camera " + mCurrentId + " opened success");
         }
     }
 
@@ -107,14 +107,13 @@ public class CameraBase {
         Camera.Size result = null;
         if (mSupportedPreviewSizes == null) {
             result = mCamera.new Size(width, height);
-            if (DEBUG) Logger.d(TAG, "SupportedPreviewSizes is null");
+            Logger.d(TAG, "SupportedPreviewSizes is null");
         } else {
             double m = 1.7976931348623157E+308D;
             Iterator localIterator = mSupportedPreviewSizes.iterator();
             while (localIterator.hasNext()) {
                 Camera.Size localSize = (Camera.Size) localIterator.next();
-                if (DEBUG)
-                    Logger.d(TAG, "PreviewWidth = " + localSize.width + ", PreviewHeight = " + localSize.height);
+                Logger.d(TAG, "PreviewWidth = " + localSize.width + ", PreviewHeight = " + localSize.height);
                 int n = Math.abs(localSize.width - width) + Math.abs(localSize.height - height);
                 if (n >= m) {
                     continue;
@@ -128,8 +127,7 @@ public class CameraBase {
 
     public void setDisplayOrientation(int orientation) {
         // surfaceRotation may be Surface.ROTATION_0,Surface.ROTATION_90,Surface.ROTATION_180,Surface.ROTATION_270:
-        if (DEBUG)
-            Logger.d(TAG, "the camera orientation : " + mCameraInfo.orientation + orientation);
+        Logger.d(TAG, "the camera orientation : " + mCameraInfo.orientation + orientation);
         int surfaceAngle = 90 * orientation;
         int rotationAngle = (surfaceAngle + mCameraInfo.orientation) % 360;
         if (mCameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
@@ -140,7 +138,7 @@ public class CameraBase {
 
     public void setPreviewCallback(Camera.PreviewCallback previewCallback) {
         mPreviewCallback = previewCallback;
-        if (DEBUG) Logger.d(TAG, "setPreviewCallback " + mPreviewCallback);
+        Logger.d(TAG, "setPreviewCallback " + mPreviewCallback);
         mCamera.setPreviewCallback(mPreviewCallback);
         return;
     }
@@ -151,7 +149,6 @@ public class CameraBase {
     }
 
     protected void startPreview() throws IOException {
-        mCamera.setParameters(mParameters);
         mCamera.startPreview();
         isPreview = true;
     }
@@ -161,7 +158,7 @@ public class CameraBase {
             if (isOpened && isPreview) {
                 mCamera.stopPreview();
                 isPreview = false;
-                if (DEBUG) Logger.d(TAG, "stopped preview!");
+                Logger.d(TAG, "stopped preview!");
             }
         }
     }
