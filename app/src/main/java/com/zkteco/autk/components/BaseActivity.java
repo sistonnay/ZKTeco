@@ -1,9 +1,9 @@
 package com.zkteco.autk.components;
 
-
 import android.app.Activity;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.widget.Toast;
 
 import com.zkteco.autk.presenters.BasePresenter;
 
@@ -36,5 +36,14 @@ public abstract class BaseActivity<P extends BasePresenter> extends Activity imp
     protected void onDestroy() {
         super.onDestroy();
         mPresenter.detachView();
+    }
+
+    public void toast(final String msg) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(BaseActivity.this, msg, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

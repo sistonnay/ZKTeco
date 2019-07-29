@@ -128,7 +128,8 @@ public class CameraBase {
 
     public void setDisplayOrientation(int orientation) {
         // surfaceRotation may be Surface.ROTATION_0,Surface.ROTATION_90,Surface.ROTATION_180,Surface.ROTATION_270:
-        if (DEBUG) Logger.d(TAG, "the camera orientation : " + mCameraInfo.orientation + orientation);
+        if (DEBUG)
+            Logger.d(TAG, "the camera orientation : " + mCameraInfo.orientation + orientation);
         int surfaceAngle = 90 * orientation;
         int rotationAngle = (surfaceAngle + mCameraInfo.orientation) % 360;
         if (mCameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {

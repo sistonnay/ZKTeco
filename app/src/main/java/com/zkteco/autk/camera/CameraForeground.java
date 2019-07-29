@@ -16,25 +16,36 @@ import java.util.List;
  * author: Created by Ho Dao on 2019/7/29 0029 02:26
  * email: 372022839@qq.com (github: sistonnay)
  */
-public class CameraFront extends CameraBase implements Camera.PreviewCallback, TextureView.SurfaceTextureListener{
-    private static final String TAG = Utils.TAG + "#" + CameraFront.class.getSimpleName();
+public abstract class CameraForeground extends CameraBase implements Camera.PreviewCallback, TextureView.SurfaceTextureListener{
+    private static final String TAG = Utils.TAG + "#" + CameraForeground.class.getSimpleName();
 
     private static final boolean DEBUG = Utils.DEBUG;
 
-    private final int CAMERA_WIDTH = 640;
-    private final int CAMERA_HEIGHT = 480;
-    private final int PREVIEW_FORMAT = ImageFormat.NV21;
+    private int mPreviewWidth = 640;
+    private int mPreviewHeight = 480;
+    private int mPreviewFormat = ImageFormat.NV21;
 
-    private Activity mContext;
+    protected Activity mContext;
 
-    public CameraFront(Activity context) {
+    public CameraForeground( Activity context) {
         super();
         mContext = context;
     }
 
-    public void open() {
-        open(getFrontId());
+    public void setPreviewWidth(int previewWidth) {
+        this.mPreviewWidth = previewWidth;
     }
+
+    public void setPreviewHeight(int previewHeight) {
+        this.mPreviewHeight = previewHeight;
+    }
+
+    public void setPreviewFormat(int previewFormat) {
+        this.mPreviewFormat = previewFormat;
+    }
+
+    public abstract void open();
+    public abstract void onPreview(byte[] data);
 
     @Override
     public void startPreview() throws IOException {
@@ -47,11 +58,11 @@ public class CameraFront extends CameraBase implements Camera.PreviewCallback, T
             return;
         }
 
-        Camera.Size size = getOptimalPreviewSize(CAMERA_WIDTH, CAMERA_HEIGHT);
+        Camera.Size size = getOptimalPreviewSize(mPreviewWidth, mPreviewHeight);
         if (DEBUG)
             Logger.d(TAG, "PreviewWidth = " + size.width + ", PreviewHeight = " + size.height);
         getParameters().setPreviewSize(size.width, size.height);
-        getParameters().setPreviewFormat(PREVIEW_FORMAT);
+        getParameters().setPreviewFormat(mPreviewFormat);
 
         List<String> focusModes = getParameters().getSupportedFocusModes();
         if (focusModes.contains("continuous-video")) {
@@ -64,16 +75,25 @@ public class CameraFront extends CameraBase implements Camera.PreviewCallback, T
         setPreviewCallback(this);
 
         super.startPreview();
+        if (DEBUG) Logger.d(TAG, "Camera started preview!");
     }
 
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
-
+        onPreview(data);
     }
 
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-
+        synchronized (mLock) {
+            open();
+            try {
+                setPreviewTexture(surface);
+                startPreview();
+            } catch (IOException e) {
+                Logger.e(TAG, "Camera Preview Exception:", e);
+            }
+        }
     }
 
     @Override
@@ -83,7 +103,8 @@ public class CameraFront extends CameraBase implements Camera.PreviewCallback, T
 
     @Override
     public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-        return false;
+        release();
+        return true;
     }
 
     @Override
