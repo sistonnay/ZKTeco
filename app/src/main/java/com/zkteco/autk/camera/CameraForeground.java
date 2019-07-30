@@ -10,14 +10,13 @@ import com.zkteco.autk.utils.Logger;
 import com.zkteco.autk.utils.Utils;
 
 import java.io.IOException;
-import java.security.Policy;
 import java.util.List;
 
 /**
  * author: Created by Ho Dao on 2019/7/29 0029 02:26
  * email: 372022839@qq.com (github: sistonnay)
  */
-public abstract class CameraForeground<A extends Activity> extends CameraBase implements Camera.PreviewCallback, TextureView.SurfaceTextureListener{
+public abstract class CameraForeground<A extends Activity> extends CameraBase implements Camera.PreviewCallback, TextureView.SurfaceTextureListener {
     private static final String TAG = Utils.TAG + "#" + CameraForeground.class.getSimpleName();
 
     private int mPreviewWidth = 640;
@@ -44,6 +43,7 @@ public abstract class CameraForeground<A extends Activity> extends CameraBase im
     }
 
     public abstract void open();
+
     public abstract void onPreview(byte[] data);
 
     @Override
@@ -61,16 +61,16 @@ public abstract class CameraForeground<A extends Activity> extends CameraBase im
         Logger.d(TAG, "PreviewWidth = " + size.width + ", PreviewHeight = " + size.height);
         Camera.Parameters parameters = getParameters();
         parameters.setPreviewSize(size.width, size.height);
+
+        List<String> focusModes = getParameters().getSupportedFocusModes();
+        if (focusModes.contains("continuous-video")) {
+            getParameters().setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+        }
+        getParameters().setPreviewFormat(mPreviewFormat);
         setParameters(parameters);
-//        List<String> focusModes = getParameters().getSupportedFocusModes();
-//        if (focusModes.contains("continuous-video")) {
-//            getParameters().setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
-//        }
-//
+
         int surfaceRotation = mContext.getWindowManager().getDefaultDisplay().getRotation();
         setDisplayOrientation(surfaceRotation);
-
-        getParameters().setPreviewFormat(mPreviewFormat);
         setPreviewCallback(this);
 
         super.startPreview();

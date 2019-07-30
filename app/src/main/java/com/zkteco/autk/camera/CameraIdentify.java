@@ -1,14 +1,9 @@
 package com.zkteco.autk.camera;
 
-import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
-import android.renderscript.Allocation;
-import android.renderscript.Element;
-import android.renderscript.RenderScript;
-import android.renderscript.ScriptIntrinsicYuvToRGB;
-import android.renderscript.Type;
 import android.text.TextUtils;
 
+import com.zkteco.android.graphics.ImageConverter;
 import com.zkteco.autk.R;
 import com.zkteco.autk.components.EnrollActivity;
 import com.zkteco.autk.models.ZKLiveFaceManager;
@@ -26,6 +21,7 @@ public class CameraIdentify extends CameraForeground<EnrollActivity> {
     private final int CAMERA_WIDTH = 640;
     private final int CAMERA_HEIGHT = 480;
     private final int PREVIEW_FORMAT = ImageFormat.NV21;
+    private final boolean DECODE_AS_BITMAP = false;
 
     private boolean isEnrollOption = false;
     private boolean isIdentifyOption = false;
@@ -55,11 +51,9 @@ public class CameraIdentify extends CameraForeground<EnrollActivity> {
 
     @Override
     public void onPreview(byte[] data) {
-        Bitmap bmp = convertYuv2Bitmap(data);
         if (isEnrollOption) {
             isIdentifyOption = false;
-            //mTemplate = ZKLiveFaceManager.getInstance().getTemplateFromNV21(data, CAMERA_WIDTH, CAMERA_HEIGHT);
-            mTemplate = ZKLiveFaceManager.getInstance().getTemplateFromBitmap(bmp);
+            mTemplate = getTemplate(data, CAMERA_WIDTH, CAMERA_HEIGHT, false);
             if (mTemplate == null) {
                 mContext.toast(mContext.getString(R.string.extract_template_fail));
                 return;
@@ -74,8 +68,7 @@ public class CameraIdentify extends CameraForeground<EnrollActivity> {
             }
         }
         if (isIdentifyOption) {
-            //mTemplate = ZKLiveFaceManager.getInstance().getTemplateFromNV21(data, CAMERA_WIDTH, CAMERA_HEIGHT);
-            mTemplate = ZKLiveFaceManager.getInstance().getTemplateFromBitmap(bmp);
+            mTemplate = getTemplate(data, CAMERA_WIDTH, CAMERA_HEIGHT, false);
             if (mTemplate == null) {
                 //mContext.toast(mContext.getString(R.string.extract_template_fail));
                 return;
@@ -90,36 +83,19 @@ public class CameraIdentify extends CameraForeground<EnrollActivity> {
         }
     }
 
-    private RenderScript mRs;
-    private ScriptIntrinsicYuvToRGB mYuvToRgbIntrinsic;
-    private Type.Builder mYuvType, mRgbaType;
-    private Allocation mIn, mOut;
+    private BitmapUtil.Yuv2Bitmap mYuv2Bitmap;
 
-    private Bitmap convertYuv2Bitmap(byte[] data) {
-        // convert yuvData to bitmap
-        mRs = (null == mRs) ? RenderScript.create(mContext) : mRs;
-        if (null == mYuvToRgbIntrinsic) {
-            mYuvToRgbIntrinsic = ScriptIntrinsicYuvToRGB.create(mRs, Element.U8_4(mRs));
+    private byte[] getTemplate(byte[] data, int width, int height, boolean bmpMode) {
+        if (bmpMode) {
+            if (mYuv2Bitmap == null) {
+                mYuv2Bitmap = new BitmapUtil.Yuv2Bitmap(mContext);
+            }
+            return ZKLiveFaceManager.getInstance().getTemplateFromBitmap(mYuv2Bitmap.convert(data, width, height, 90));
+        } else {
+            byte[] dst = new byte[data.length];
+            ImageConverter.rotateNV21Degree90(data, dst, width, height);//旋转90度，宽高对调
+            return ZKLiveFaceManager.getInstance().getTemplateFromNV21(dst, height, width);
         }
-        if (null == mYuvType) {
-            mYuvType = new Type.Builder(mRs, Element.U8(mRs)).setX(data.length);
-        }
-        if (null == mRgbaType) {
-            mRgbaType = new Type.Builder(mRs, Element.RGBA_8888(mRs)).setX(CAMERA_WIDTH).setY(CAMERA_HEIGHT);
-        }
-        if (null == mIn) {
-            mIn = Allocation.createTyped(mRs, mYuvType.create(), Allocation.USAGE_SCRIPT);
-        }
-        if (null == mOut) {
-            mOut = Allocation.createTyped(mRs, mRgbaType.create(), Allocation.USAGE_SCRIPT);
-        }
-        mIn.copyFrom(data);
-
-        mYuvToRgbIntrinsic.setInput(mIn);
-        mYuvToRgbIntrinsic.forEach(mOut);
-        Bitmap outBmp = Bitmap.createBitmap(CAMERA_WIDTH, CAMERA_HEIGHT, Bitmap.Config.ARGB_8888);
-        mOut.copyTo(outBmp);
-        outBmp = BitmapUtil.rotateBitmap(outBmp, 270);
-        return outBmp;
     }
+
 }

@@ -6,7 +6,6 @@ import com.zkteco.android.biometric.liveface56.ZKLiveFaceService;
 import com.zkteco.autk.utils.Logger;
 import com.zkteco.autk.utils.Utils;
 
-
 /**
  * @author gy.lin
  * @create 2018/8/13

@@ -8,5 +8,4 @@ import com.zkteco.autk.IContract;
  */
 public class EnrollModel implements IContract.IModel {
 
-
 }

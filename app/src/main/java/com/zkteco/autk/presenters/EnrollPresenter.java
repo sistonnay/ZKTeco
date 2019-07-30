@@ -1,13 +1,11 @@
 package com.zkteco.autk.presenters;
 
-import android.app.Activity;
 import android.view.TextureView;
 
 import com.zkteco.autk.camera.CameraIdentify;
 import com.zkteco.autk.components.EnrollActivity;
 import com.zkteco.autk.models.EnrollModel;
 import com.zkteco.autk.models.TimerTool;
-import com.zkteco.autk.models.ZKLiveFaceManager;
 import com.zkteco.autk.utils.Logger;
 import com.zkteco.autk.utils.Utils;
 
