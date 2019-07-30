@@ -19,7 +19,7 @@ public class CameraIdentify extends CameraForeground<EnrollActivity> {
     private static final String TAG = Utils.TAG + "#" + CameraIdentify.class.getSimpleName();
 
     private final int CAMERA_WIDTH = 640;
-    private final int CAMERA_HEIGHT = 480;
+    private final int CAMERA_HEIGHT = 360;
     private final int PREVIEW_FORMAT = ImageFormat.NV21;
     private final boolean DECODE_AS_BITMAP = false;
 
@@ -60,7 +60,7 @@ public class CameraIdentify extends CameraForeground<EnrollActivity> {
             }
             if (ZKLiveFaceManager.getInstance().dbAdd("faceID_" + faceId, mTemplate)) {
                 mContext.toast(mContext.getString(R.string.db_add_template_success) + ",id=faceID_" + faceId);
-                mContext.fillProgress();
+                mContext.showEnrollTheme();
                 isEnrollOption = false;
                 faceId++;
             } else {
@@ -79,7 +79,7 @@ public class CameraIdentify extends CameraForeground<EnrollActivity> {
             } else {
                 mContext.toast(mContext.getString(R.string.identify_success) + ",id=" + id);
             }
-            mContext.resetProgress();
+            mContext.showIdentifyTheme();
         }
     }
 
