@@ -95,7 +95,7 @@ public class OverlayView extends ImageView {
         int cy = hc / 2;
 
         mPaint.reset();
-        mPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_OUT)); //PorterDuff.Mode.CLEAR为抠空，不上色
+        mPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR/*DST_OUT*/)); //PorterDuff.Mode.CLEAR为抠空，不上色
         mPaint.setStyle(Paint.Style.FILL);
         mPaint.setColor(mTheme.circleFillColor);
         mPaint.setAntiAlias(true);

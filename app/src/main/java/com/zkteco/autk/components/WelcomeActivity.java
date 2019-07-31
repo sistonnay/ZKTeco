@@ -99,7 +99,7 @@ public class WelcomeActivity extends BaseActivity {
 
     @Override
     public int getLayoutId() {
-        return R.layout.welcome_layout;
+        return R.layout.welcome_ly;
     }
 
     @Override

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom"
+    android:layout_margin="40dp"
+    android:background="@drawable/corner_layout_blue_light"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:id="@+id/tv_password"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/tv_underline_blue"
+        android:clickable="true"
+        android:gravity="center"
+        android:hint="@string/text_password"
+        android:inputType="numberPassword"
+        android:padding="10dp"
+        android:textColor="#FF2196F3"
+        android:textColorHint="#FF2196F3"
+        android:textSize="20sp"
+        android:visibility="gone" />
+
+    <include
+        android:id="@+id/ly_register_info"
+        layout="@layout/register_info_ly" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="20dp">
+
+        <ImageView
+            android:id="@+id/back"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="20dp"
+            android:alpha="0.6"
+            android:background="@mipmap/back" />
+
+        <ImageView
+            android:id="@+id/next"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_alignParentRight="true"
+            android:layout_marginRight="20dp"
+            android:background="@mipmap/next" />
+    </RelativeLayout>
+</LinearLayout>

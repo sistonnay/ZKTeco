@@ -9,9 +9,17 @@
     <string name="init_algorithm_fail">init algorithm fail</string>
     <string name="text_enroll">enroll face</string>
     <string name="text_identify">identify face</string>
+    <string name="text_password">Please input password</string>
     <string name="extract_template_fail">extract template fail</string>
     <string name="db_add_template_success">db add template success</string>
     <string name="db_add_template_fail">db add template fail</string>
     <string name="identify_fail">identify fail</string>
     <string name="identify_success">identify success</string>
+    <string name="text_id">ID:</string>
+    <string name="text_name">Name:</string>
+    <string name="text_phone">Phone:</string>
+    <string name="dialog_title_id">Input your ID number</string>
+    <string name="dialog_title_name">Input your name</string>
+    <string name="dialog_title_pass">Input admin password</string>
+    <string name="dialog_title_phone">Input your phone number</string>
 </resources>

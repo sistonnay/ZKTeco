@@ -20,8 +20,9 @@ public abstract class CameraForeground<A extends Activity> extends CameraBase im
     private static final String TAG = Utils.TAG + "#" + CameraForeground.class.getSimpleName();
 
     private int mPreviewWidth = 640;
-    private int mPreviewHeight = 480;
+    private int mPreviewHeight = 360;
     private int mPreviewFormat = ImageFormat.NV21;
+    private CameraPreview mCameraPreview;
 
     protected A mContext;
 
@@ -42,9 +43,11 @@ public abstract class CameraForeground<A extends Activity> extends CameraBase im
         this.mPreviewFormat = previewFormat;
     }
 
-    public abstract void open();
+    public void setCameraPreview(CameraPreview cameraPreview) {
+        this.mCameraPreview = cameraPreview;
+    }
 
-    public abstract void onPreview(byte[] data);
+    public abstract void open();
 
     @Override
     public void startPreview() throws IOException {
@@ -79,7 +82,9 @@ public abstract class CameraForeground<A extends Activity> extends CameraBase im
 
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
-        onPreview(data);
+        if (mCameraPreview != null) {
+            mCameraPreview.onPreview(data);
+        }
     }
 
     @Override

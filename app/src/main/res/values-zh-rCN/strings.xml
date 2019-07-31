@@ -2,6 +2,10 @@
     <string name="app_name">人脸识别</string>
     <string name="setup_enrollment_message">请将面部对准屏幕上显示的圆圈</string>
     <string name="dialog_title_auth">激活状态</string>
+    <string name="dialog_title_pass">输入管理员密码</string>
+    <string name="dialog_title_name">输入您的名字</string>
+    <string name="dialog_title_id">输入二代身份证号码</string>
+    <string name="dialog_title_phone">输入11位手机号码</string>
     <string name="dialog_message_auth">人脸识别模块未激活\n机器码:%2$s\n设备指纹路径:\n%1$s\n点击确认选择license</string>
     <string name="text_welcome">正在初始化，请稍后...</string>
     <string name="choose_lic_file_failed">选择许可文件失败</string>
@@ -9,6 +13,10 @@
     <string name="init_algorithm_fail">初始化算法失败</string>
     <string name="text_enroll">注册面部</string>
     <string name="text_identify">识别面部</string>
+    <string name="text_password">请输入密码</string>
+    <string name="text_name">姓  名:</string>
+    <string name="text_id">身份证:</string>
+    <string name="text_phone">手机号:</string>
     <string name="extract_template_fail">提取模板失败</string>
     <string name="db_add_template_success">添加模板成功</string>
     <string name="db_add_template_fail">添加模板失败</string>

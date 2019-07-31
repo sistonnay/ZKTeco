@@ -11,7 +11,7 @@
     <style name="OverlayView_Enroll">
         <item name="circle_edge_width">3dp</item>
         <item name="circle_edge_color">#FF2196F3</item>
-        <item name="circle_fill_color">#1AE91E63</item>
+        <item name="circle_fill_color">#0DE91E63</item>
         <item name="blank_place_background">#FF3F51B5</item>
     </style>
 

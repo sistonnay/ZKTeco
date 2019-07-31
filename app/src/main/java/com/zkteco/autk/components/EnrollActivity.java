@@ -1,11 +1,14 @@
 package com.zkteco.autk.components;
 
-import android.content.res.TypedArray;
 import android.os.Bundle;
+import android.text.InputType;
+import android.text.TextUtils;
 import android.view.TextureView;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.zkteco.autk.R;
 import com.zkteco.autk.presenters.EnrollPresenter;
@@ -16,17 +19,36 @@ import com.zkteco.autk.views.OverlayView;
  * author: Created by Ho Dao on 2019/7/29 0029 00:27
  * email: 372022839@qq.com (github: sistonnay)
  */
-public class EnrollActivity extends BaseActivity<EnrollPresenter> {
+public class EnrollActivity extends BaseActivity<EnrollPresenter> implements View.OnClickListener {
     private static final String TAG = Utils.TAG + "#" + EnrollActivity.class.getSimpleName();
+
+    private static final String ADMIN_PASS = "123456";
+
+    public static final int MODE_NULL = -1;
+    public static final int MODE_IDENTIFY = 0;
+    public static final int MODE_CHECK_IN = 1;
+    public static final int MODE_PRE_ENROLL = 2;
+    public static final int MODE_ENROLLING = 3;
 
     private TextureView mPreVRect;
     private OverlayView mOverlayRect;
     private OverlayView.OverlayTheme mEnrollTheme;
     private OverlayView.OverlayTheme mIdentifyTheme;
 
-    private ImageView mEnroll;
-    private boolean isEnrolling = false;
+    private LinearLayout mAlert;
+    private LinearLayout mInputInfo;
+    private LinearLayout mRegisterInfo;
+    private ImageView mBackButton;
+    private ImageView mNextButton;
+    private ImageView mEnrollButton;
 
+    private TextView mPassText;
+    private TextView mNameText;
+    private TextView mIDText;
+    private TextView mPhoneText;
+
+    private int mode = MODE_IDENTIFY;
+    private String mAdminPass = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,13 +86,6 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> {
     public void initViews() {
         mPreVRect = (TextureView) findViewById(R.id.preview);
         mOverlayRect = (OverlayView) findViewById(R.id.overlay_view);
-
-        final TypedArray taEnroll = obtainStyledAttributes(R.style.OverlayView_Enroll, R.styleable.OverlayView);
-        mEnrollTheme = mOverlayRect.getThemeFromTypedArray(taEnroll);
-
-        final TypedArray taIdentify = obtainStyledAttributes(R.style.OverlayView_Identify, R.styleable.OverlayView);
-        mIdentifyTheme = mOverlayRect.getThemeFromTypedArray(taIdentify);
-
         /*
         WindowManager wm =getWindowManager();
         ViewGroup.LayoutParams params = mPreVRect.getLayoutParams();
@@ -81,24 +96,99 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> {
         mPreVRect.setLayoutParams(params);
         */
 
-        mEnroll = (ImageView) findViewById(R.id.enroll);
-        mEnroll.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (isEnrolling) {
-                    mPresenter.identifyFace();
-                    isEnrolling = false;
-                } else {
-                    mPresenter.enrollFace();
-                    isEnrolling = true;
-                }
+        mAlert = (LinearLayout) findViewById(R.id.ly_alert);
+
+        mInputInfo = (LinearLayout) findViewById(R.id.ly_input_info);
+        mBackButton = (ImageView) mInputInfo.findViewById(R.id.back);
+        mBackButton.setOnClickListener(this);
+        mNextButton = (ImageView) mInputInfo.findViewById(R.id.next);
+        mNextButton.setOnClickListener(this);
+        mPassText = (TextView) mInputInfo.findViewById(R.id.tv_password);
+        mPassText.setOnClickListener(this);
+
+        mRegisterInfo = (LinearLayout) mInputInfo.findViewById(R.id.ly_register_info);
+        mNameText = (TextView) mRegisterInfo.findViewById(R.id.tv_name);
+        mNameText.setOnClickListener(this);
+        mIDText = (TextView) mRegisterInfo.findViewById(R.id.tv_id);
+        mIDText.setOnClickListener(this);
+        mPhoneText = (TextView) mRegisterInfo.findViewById(R.id.tv_phone);
+        mPhoneText.setOnClickListener(this);
+
+        mEnrollButton = (ImageView) findViewById(R.id.enroll);
+        mEnrollButton.setOnClickListener(this);
+
+        mEnrollTheme = mOverlayRect.getThemeFromTypedArray(
+                obtainStyledAttributes(R.style.OverlayView_Enroll, R.styleable.OverlayView));
+        mIdentifyTheme = mOverlayRect.getThemeFromTypedArray(
+                obtainStyledAttributes(R.style.OverlayView_Identify, R.styleable.OverlayView));
+        refreshUI();
+    }
+
+    public void setMode(int mode) {
+        this.mode = mode;
+    }
+
+    public int getMode() {
+        return mode;
+    }
+
+    public void refreshUI() {
+        switch (mode) {
+            case MODE_ENROLLING: {
+                mAlert.setVisibility(View.GONE);
+                mInputInfo.setVisibility(View.GONE);
+                mEnrollButton.setVisibility(View.GONE);
+                mOverlayRect.setTheme(mEnrollTheme);
             }
-        });
+            break;
+            case MODE_PRE_ENROLL: {
+                mAlert.setVisibility(View.GONE);
+                mInputInfo.setVisibility(View.VISIBLE);
+                mRegisterInfo.setVisibility(View.VISIBLE);
+                mPassText.setVisibility(View.GONE);
+                mEnrollButton.setVisibility(View.GONE);
+                mOverlayRect.setTheme(mEnrollTheme);
+            }
+            break;
+            case MODE_CHECK_IN: {
+                mAlert.setVisibility(View.GONE);
+                mInputInfo.setVisibility(View.VISIBLE);
+                mPassText.setVisibility(View.VISIBLE);
+                mRegisterInfo.setVisibility(View.GONE);
+                mEnrollButton.setVisibility(View.GONE);
+                mOverlayRect.setTheme(mIdentifyTheme);
+            }
+            break;
+            case MODE_IDENTIFY: {
+                mAlert.setVisibility(View.VISIBLE);
+                mInputInfo.setVisibility(View.GONE);
+                mEnrollButton.setVisibility(View.VISIBLE);
+                mOverlayRect.setTheme(mIdentifyTheme);
+            }
+            break;
+        }
     }
 
     @Override
     public void initPresenter() {
         mPresenter = new EnrollPresenter();
+    }
+
+    @Override
+    public void onBackPressed() {
+        switch (mode) {
+            case MODE_ENROLLING:
+            case MODE_PRE_ENROLL:
+            case MODE_CHECK_IN: {
+                mode = MODE_IDENTIFY;
+            }
+            break;
+            case MODE_IDENTIFY: {
+                super.onBackPressed();
+            }
+            break;
+        }
+        refreshUI();
     }
 
     public void showEnrollTheme() {
@@ -107,5 +197,83 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> {
 
     public void showIdentifyTheme() {
         mOverlayRect.setTheme(mIdentifyTheme);
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.back: {
+                onBackPressed();
+            }
+            break;
+            case R.id.next: {
+                if (mode == MODE_CHECK_IN) {
+                    if (TextUtils.equals(mAdminPass, ADMIN_PASS)) {
+                        mode = MODE_PRE_ENROLL;
+                        mPassText.setText("");
+                    } else {
+                        toast("Password Error!");
+                        return;
+                    }
+                } else if (mode == MODE_PRE_ENROLL) {
+                    if (mPresenter.isLegalEnrollInfo()) {
+                        mode = MODE_ENROLLING;
+                        mNameText.setText("");
+                        mIDText.setText("");
+                        mPhoneText.setText("");
+                    } else {
+                        toast("Name or ID or Phone Error!");
+                        return;
+                    }
+                }
+                refreshUI();
+            }
+            break;
+            case R.id.enroll: {
+                mode = MODE_CHECK_IN;
+                refreshUI();
+            }
+            break;
+            case R.id.tv_password: {
+                new EditDialog(this, R.string.dialog_title_pass, InputType.TYPE_NUMBER_VARIATION_PASSWORD) {
+                    @Override
+                    public void onDialogOK(String text) {
+                        mPassText.setText(text);
+                        mAdminPass = text;
+                    }
+                }.show();
+            }
+            break;
+            case R.id.tv_name: {
+                new EditDialog(this, R.string.dialog_title_name, InputType.TYPE_CLASS_TEXT) {
+                    @Override
+                    public void onDialogOK(String text) {
+                        mNameText.setText(text);
+                        mPresenter.recordName(text);
+                    }
+                }.show();
+            }
+            break;
+            case R.id.tv_id: {
+                new EditDialog(this, R.string.dialog_title_id, InputType.TYPE_CLASS_NUMBER) {
+                    @Override
+                    public void onDialogOK(String text) {
+                        mIDText.setText(text);
+                        mPresenter.recordId(text);
+                    }
+                }.show();
+            }
+            break;
+            case R.id.tv_phone: {
+                new EditDialog(this, R.string.dialog_title_phone, InputType.TYPE_CLASS_PHONE) {
+                    @Override
+                    public void onDialogOK(String text) {
+                        mPhoneText.setText(text);
+                        mPresenter.recordPhone(text);
+                    }
+                }.show();
+            }
+            break;
+        }
     }
 }

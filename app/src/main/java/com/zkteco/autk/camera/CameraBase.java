@@ -177,4 +177,8 @@ public class CameraBase {
             }
         }
     }
+
+    public interface CameraPreview {
+        void onPreview(byte[] data);
+    }
 }

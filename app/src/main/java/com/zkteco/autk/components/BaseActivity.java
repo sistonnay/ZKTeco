@@ -15,6 +15,7 @@ import com.zkteco.autk.utils.PermissionUtil;
 public abstract class BaseActivity<P extends BasePresenter> extends Activity implements BaseView {
 
     protected P mPresenter;
+    private Toast mToast = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,7 +54,12 @@ public abstract class BaseActivity<P extends BasePresenter> extends Activity imp
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(BaseActivity.this, msg, Toast.LENGTH_SHORT).show();
+                if (mToast == null) {
+                    mToast = Toast.makeText(BaseActivity.this, msg, Toast.LENGTH_SHORT);
+                } else {
+                    mToast.setText(msg);
+                }
+                mToast.show();
             }
         });
     }
