@@ -7,8 +7,8 @@
     <string name="choose_lic_file_failed">choose license file failed</string>
     <string name="init_algorithm_success">init algorithm success</string>
     <string name="init_algorithm_fail">init algorithm fail</string>
-    <string name="button_enroll">enroll face</string>
-    <string name="button_identify">identify face</string>
+    <string name="text_enroll">enroll face</string>
+    <string name="text_identify">identify face</string>
     <string name="extract_template_fail">extract template fail</string>
     <string name="db_add_template_success">db add template success</string>
     <string name="db_add_template_fail">db add template fail</string>

@@ -5,7 +5,7 @@ import android.os.Bundle;
 import android.view.TextureView;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Button;
+import android.widget.ImageView;
 
 import com.zkteco.autk.R;
 import com.zkteco.autk.presenters.EnrollPresenter;
@@ -24,7 +24,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> {
     private OverlayView.OverlayTheme mEnrollTheme;
     private OverlayView.OverlayTheme mIdentifyTheme;
 
-    private Button mEnroll;
+    private ImageView mEnroll;
     private boolean isEnrolling = false;
 
 
@@ -81,17 +81,15 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> {
         mPreVRect.setLayoutParams(params);
         */
 
-        mEnroll = (Button) findViewById(R.id.enroll);
+        mEnroll = (ImageView) findViewById(R.id.enroll);
         mEnroll.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (isEnrolling) {
                     mPresenter.identifyFace();
-                    mEnroll.setText(R.string.button_enroll);
                     isEnrolling = false;
                 } else {
                     mPresenter.enrollFace();
-                    mEnroll.setText(R.string.button_identify);
                     isEnrolling = true;
                 }
             }

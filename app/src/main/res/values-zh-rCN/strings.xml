@@ -7,8 +7,8 @@
     <string name="choose_lic_file_failed">选择许可文件失败</string>
     <string name="init_algorithm_success">初始化算法成功</string>
     <string name="init_algorithm_fail">初始化算法失败</string>
-    <string name="button_enroll">注册面部</string>
-    <string name="button_identify">识别面部</string>
+    <string name="text_enroll">注册面部</string>
+    <string name="text_identify">识别面部</string>
     <string name="extract_template_fail">提取模板失败</string>
     <string name="db_add_template_success">添加模板成功</string>
     <string name="db_add_template_fail">添加模板失败</string>

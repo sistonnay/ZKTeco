@@ -10,36 +10,62 @@
         android:layout_height="match_parent"
         android:scaleType="fitXY" />
 
-    <com.zkteco.autk.views.OverlayView
-        android:id="@+id/overlay_view"
-        style="@style/OverlayView_Identify"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
+        android:layout_margin="40dp"
+        android:background="@drawable/corner_layout_blue"
         android:orientation="horizontal">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="10dp"
-            android:layout_marginBottom="30dp"
-            android:layout_weight="3"
+            android:layout_margin="20dp"
             android:gravity="center_vertical"
             android:text="@string/setup_enrollment_message"
+            android:textColor="@android:color/holo_blue_light"
             android:textSize="20sp" />
+    </LinearLayout>
 
-        <Button
-            android:id="@+id/enroll"
-            android:layout_width="wrap_content"
+    <com.zkteco.autk.views.OverlayView
+        android:id="@+id/overlay_view"
+        style="@style/OverlayView_Enroll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <ImageView
+        android:id="@+id/enroll"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_gravity="top|right"
+        android:layout_margin="10dp"
+        android:layout_weight="1"
+        android:background="@mipmap/settings" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_margin="40dp"
+        android:padding="20dp"
+        android:background="@drawable/corner_layout_blue_light"
+        android:orientation="vertical">
+
+        <EditText
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="10dp"
-            android:layout_marginRight="10dp"
-            android:layout_weight="1"
-            android:text="@string/button_enroll" />
+            android:gravity="center"
+            android:textSize="20sp"
+            android:hint="password"
+            android:textCursorDrawable="@null"
+            android:background="@drawable/et_underline_unselected"/>
 
+        <ImageView
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginTop="10dp"
+            android:layout_gravity="center_horizontal"
+            android:background="@mipmap/go" />
     </LinearLayout>
 </FrameLayout>
