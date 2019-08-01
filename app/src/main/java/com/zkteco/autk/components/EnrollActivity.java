@@ -48,7 +48,6 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
     private TextView mPhoneText;
 
     private int mode = MODE_IDENTIFY;
-    private String mAdminPass = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +55,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         super.onCreate(savedInstanceState);
         mPresenter.init();
+        refreshUI();
     }
 
     @Override
@@ -121,7 +121,6 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
                 obtainStyledAttributes(R.style.OverlayView_Enroll, R.styleable.OverlayView));
         mIdentifyTheme = mOverlayRect.getThemeFromTypedArray(
                 obtainStyledAttributes(R.style.OverlayView_Identify, R.styleable.OverlayView));
-        refreshUI();
     }
 
     public void setMode(int mode) {
@@ -167,10 +166,10 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
             }
             break;
         }
-        mPassText.setText(mAdminPass);
         mNameText.setText(mPresenter.getName());
         mIDText.setText(mPresenter.getId());
         mPhoneText.setText(mPresenter.getPhone());
+        mPassText.setText(mPresenter.getAdminPass());
     }
 
     @Override
@@ -185,7 +184,6 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
             case MODE_PRE_ENROLL:
             case MODE_CHECK_IN: {
                 mode = MODE_IDENTIFY;
-                mAdminPass = null;
                 mPresenter.resetInfo();
             }
             break;
@@ -206,7 +204,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
             break;
             case R.id.next: {
                 if (mode == MODE_CHECK_IN) {
-                    if (TextUtils.equals(mAdminPass, ADMIN_PASS)) {
+                    if (TextUtils.equals(mPresenter.getAdminPass(), ADMIN_PASS)) {
                         mode = MODE_PRE_ENROLL;
                     } else {
                         toast("Password Error!");
@@ -229,13 +227,15 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
             }
             break;
             case R.id.tv_password: {
-                new EditDialog(this, R.string.dialog_title_pass, InputType.TYPE_NUMBER_VARIATION_PASSWORD) {
+                EditDialog dialog = new EditDialog(this, R.string.dialog_title_pass, InputType.TYPE_CLASS_NUMBER) {
                     @Override
                     public void onDialogOK(String text) {
                         mPassText.setText(text);
-                        mAdminPass = text;
+                        mPresenter.setAdminPass(text);
                     }
-                }.show();
+                };
+                dialog.passWordStyle(true);
+                dialog.show();
             }
             break;
             case R.id.tv_name: {
@@ -249,7 +249,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
             }
             break;
             case R.id.tv_id: {
-                new EditDialog(this, R.string.dialog_title_id, InputType.TYPE_CLASS_NUMBER) {
+                new EditDialog(this, R.string.dialog_title_id, InputType.TYPE_CLASS_TEXT) {
                     @Override
                     public void onDialogOK(String text) {
                         mIDText.setText(text);

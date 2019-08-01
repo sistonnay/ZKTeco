@@ -22,6 +22,23 @@
         <item name="blank_place_background">#0D3F51B5</item>
     </style>
 
+    <style name="EditDialog" parent="Base.Theme.AppCompat.Light.Dialog">
+        <item name="android:windowAnimationStyle">@style/Base.Animation.AppCompat.Dialog</item>
+        <!--是否浮在窗口之上-->
+        <item name="android:windowIsFloating">true</item>
+        <!--半透明-->
+        <item name="android:windowIsTranslucent">true</item>
+        <!--是否显示title-->
+        <item name="android:windowNoTitle">false</item>
+        <!--dialog之外没有焦点的区域是否罩上黑色半透明-->
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:windowSoftInputMode">stateAlwaysVisible</item>
+        <item name="android:background">@drawable/edit_dialog_bg</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:textColor">#E4E4E4</item>
+        <item name="android:textColorPrimary">#666666</item>
+    </style>
+
     <style name="RoundProgressBar_Default">
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_width">match_parent</item>

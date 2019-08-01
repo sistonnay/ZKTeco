@@ -29,7 +29,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private final String sql_create_identify_tb = "CREATE TABLE "
             + IDENTIFY_TABLE.NAME + " ("
             + IDENTIFY_TABLE.KEY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
-            + IDENTIFY_TABLE.KEY_IDENTITY_ID + " TEXT  NOT NULL,"
+            + IDENTIFY_TABLE.KEY_JOB_NUMBER + " INTEGER DEFAULT -1,"
             + IDENTIFY_TABLE.KEY_CHECK_IN_TIME + " TEXT NOT NULL)";
 
     public DatabaseHelper(@Nullable Context context) {

@@ -1,6 +1,5 @@
 package com.zkteco.autk.presenters;
 
-import android.content.ContentValues;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -21,8 +20,6 @@ import com.zkteco.autk.models.ZKLiveFaceManager;
 import com.zkteco.autk.utils.BitmapUtil;
 import com.zkteco.autk.utils.Logger;
 import com.zkteco.autk.utils.Utils;
-import com.zkteco.autk.dao.DatabaseUtils.ENROLL_TABLE;
-import com.zkteco.autk.dao.DatabaseUtils.IDENTIFY_TABLE;
 
 import java.io.IOException;
 
@@ -38,13 +35,14 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
     private static final int MSG_ENROLL_GET_TEMPLATE_FAIL = 0;
     private static final int MSG_ENROLL_GET_TEMPLATE_SUCCESS = 1;
     private static final int MSG_ENROLL_FAIL = 2;
-    private static final int MSG_ENROLL_SUCCESS = 3;
-    private static final int MSG_ENROLL_EXISTED = 4;
-    private static final int MSG_IDENTIFY_GET_TEMPLATE_FAIL = 5;
-    private static final int MSG_IDENTIFY_GET_TEMPLATE_SUCCESS = 6;
-    private static final int MSG_IDENTIFY_FAIL = 7;
-    private static final int MSG_IDENTIFY_SUCCESS = 8;
-    private static final int MSG_REFRESH_UI = 9;
+    private static final int MSG_ENROLL_ADDED = 3;
+    private static final int MSG_ENROLL_SUCCESS = 4;
+    private static final int MSG_ENROLL_EXISTED = 5;
+    private static final int MSG_IDENTIFY_GET_TEMPLATE_FAIL = 6;
+    private static final int MSG_IDENTIFY_GET_TEMPLATE_SUCCESS = 7;
+    private static final int MSG_IDENTIFY_FAIL = 8;
+    private static final int MSG_IDENTIFY_SUCCESS = 9;
+    private static final int MSG_REFRESH_UI = 10;
 
     private final int CAMERA_WIDTH = CameraIdentify.CAMERA_WIDTH;
     private final int CAMERA_HEIGHT = CameraIdentify.CAMERA_HEIGHT;
@@ -62,13 +60,15 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
     private long currTimeMillis = 0;
     private String faceId = null;
 
+    private String mAdminPass = null;
+
     public void init() {
         mActivity = mView.get();
-        mHandler = new H(mActivity.getMainLooper());
         mModel = new EnrollModel();
         mCamera = new CameraIdentify(mActivity);
         mCamera.setCameraPreview(this);
         mDbHelper = new DatabaseHelper(mActivity);
+        mHandler = new H(mActivity.getMainLooper());
     }
 
     private void tryStartCamera() {
@@ -159,7 +159,16 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
         return mModel.getIdentifyInfo().isLegalEnrollInfo();
     }
 
+    public String getAdminPass() {
+        return mAdminPass;
+    }
+
+    public void setAdminPass(String pass) {
+        this.mAdminPass = pass;
+    }
+
     public void resetInfo() {
+        mAdminPass = null;
         mModel.getIdentifyInfo().reset();
     }
 
@@ -167,15 +176,12 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
         new Thread(new Runnable() {
             @Override
             public void run() {
-                ContentValues values = new ContentValues();
-                values.put(ENROLL_TABLE.KEY_NAME, mModel.getIdentifyInfo().id);
-                values.put(ENROLL_TABLE.KEY_FACE_ID, mModel.getIdentifyInfo().faceId);
-                values.put(ENROLL_TABLE.KEY_IDENTITY_ID, mModel.getIdentifyInfo().id);
-                values.put(ENROLL_TABLE.KEY_PHONE_NUMBER, mModel.getIdentifyInfo().phone);
-                DatabaseUtils.getInstance().insertCheckForUpdate(mDbHelper.getWritableDatabase(), ENROLL_TABLE.NAME, values,
-                        ENROLL_TABLE.KEY_IDENTITY_ID + " = '" + mModel.getIdentifyInfo().faceId + "'", null);
-                mModel.getIdentifyInfo().reset();
-                mHandler.obtainMessage(MSG_REFRESH_UI).sendToTarget();
+                long job_number = DatabaseUtils.getInstance().insertEnrollInfo(mDbHelper, mModel.getIdentifyInfo());
+                if (job_number != -1) {
+                    mHandler.obtainMessage(MSG_ENROLL_SUCCESS, String.format("%08d", job_number)).sendToTarget();
+                } else {
+                    mHandler.obtainMessage(MSG_ENROLL_FAIL).sendToTarget();
+                }
             }
         }).start();
     }
@@ -244,7 +250,7 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
         } else {
             faceId = "faceID_" + System.currentTimeMillis();
             if (ZKLiveFaceManager.getInstance().dbAdd(faceId, mTemplate)) {
-                mHandler.obtainMessage(MSG_ENROLL_SUCCESS, faceId).sendToTarget();
+                mHandler.obtainMessage(MSG_ENROLL_ADDED, faceId).sendToTarget();
             } else {
                 mHandler.obtainMessage(MSG_ENROLL_FAIL).sendToTarget();
             }
@@ -269,6 +275,7 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
                     break;
                 case MSG_IDENTIFY_SUCCESS: {
                     mActivity.toast(mActivity.getString(R.string.identify_success) + "faceID=" + msg.obj);
+                    DatabaseUtils.getInstance().insertFaceIdentifyAns(mDbHelper, msg.obj.toString(), System.currentTimeMillis());
                 }
                 break;
                 case MSG_ENROLL_GET_TEMPLATE_FAIL:
@@ -295,13 +302,18 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
                     alertDialog.show();
                 }
                 break;
-                case MSG_ENROLL_SUCCESS: {
+                case MSG_ENROLL_ADDED: {
                     setFaceId(msg.obj.toString());
-                    SimpleDialog alertDialog = new SimpleDialog(mActivity, "提示", "人脸注册成功\n" + "faceID=" + msg.obj) {
+                    saveAndResetInfo();
+                }
+                break;
+                case MSG_ENROLL_SUCCESS: {
+                    SimpleDialog alertDialog = new SimpleDialog(mActivity, "提示", "人脸注册成功\n" + "Job-Number=" + msg.obj) {
                         @Override
                         public void onDialogOK() {
                             mActivity.setMode(EnrollActivity.MODE_IDENTIFY);
-                            saveAndResetInfo();
+                            resetInfo();
+                            obtainMessage(MSG_REFRESH_UI).sendToTarget();
                         }
                     };
                     alertDialog.disableCancel(true);
