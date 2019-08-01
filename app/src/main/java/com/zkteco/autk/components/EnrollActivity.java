@@ -136,7 +136,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
         switch (mode) {
             case MODE_ENROLLING: {
                 mAlert.setVisibility(View.GONE);
-                mInputInfo.setVisibility(View.GONE);
+                mInputInfo.setVisibility(View.VISIBLE);
                 mEnrollButton.setVisibility(View.GONE);
                 mOverlayRect.setTheme(mEnrollTheme);
             }
@@ -167,6 +167,10 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
             }
             break;
         }
+        mPassText.setText(mAdminPass);
+        mNameText.setText(mPresenter.getName());
+        mIDText.setText(mPresenter.getId());
+        mPhoneText.setText(mPresenter.getPhone());
     }
 
     @Override
@@ -181,6 +185,8 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
             case MODE_PRE_ENROLL:
             case MODE_CHECK_IN: {
                 mode = MODE_IDENTIFY;
+                mAdminPass = null;
+                mPresenter.resetInfo();
             }
             break;
             case MODE_IDENTIFY: {
@@ -189,14 +195,6 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
             break;
         }
         refreshUI();
-    }
-
-    public void showEnrollTheme() {
-        mOverlayRect.setTheme(mEnrollTheme);
-    }
-
-    public void showIdentifyTheme() {
-        mOverlayRect.setTheme(mIdentifyTheme);
     }
 
     @Override
@@ -210,7 +208,6 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
                 if (mode == MODE_CHECK_IN) {
                     if (TextUtils.equals(mAdminPass, ADMIN_PASS)) {
                         mode = MODE_PRE_ENROLL;
-                        mPassText.setText("");
                     } else {
                         toast("Password Error!");
                         return;
@@ -218,9 +215,6 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
                 } else if (mode == MODE_PRE_ENROLL) {
                     if (mPresenter.isLegalEnrollInfo()) {
                         mode = MODE_ENROLLING;
-                        mNameText.setText("");
-                        mIDText.setText("");
-                        mPhoneText.setText("");
                     } else {
                         toast("Name or ID or Phone Error!");
                         return;
@@ -249,7 +243,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
                     @Override
                     public void onDialogOK(String text) {
                         mNameText.setText(text);
-                        mPresenter.recordName(text);
+                        mPresenter.setName(text);
                     }
                 }.show();
             }
@@ -259,7 +253,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
                     @Override
                     public void onDialogOK(String text) {
                         mIDText.setText(text);
-                        mPresenter.recordId(text);
+                        mPresenter.setId(text);
                     }
                 }.show();
             }
@@ -269,7 +263,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
                     @Override
                     public void onDialogOK(String text) {
                         mPhoneText.setText(text);
-                        mPresenter.recordPhone(text);
+                        mPresenter.setPhone(text);
                     }
                 }.show();
             }

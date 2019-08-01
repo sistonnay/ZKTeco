@@ -1,5 +1,6 @@
 package com.zkteco.autk.presenters;
 
+import android.content.ContentValues;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -12,12 +13,16 @@ import com.zkteco.autk.camera.CameraBase;
 import com.zkteco.autk.camera.CameraIdentify;
 import com.zkteco.autk.components.EnrollActivity;
 import com.zkteco.autk.components.SimpleDialog;
+import com.zkteco.autk.dao.DatabaseHelper;
+import com.zkteco.autk.dao.DatabaseUtils;
 import com.zkteco.autk.models.EnrollModel;
 import com.zkteco.autk.models.TimerTool;
 import com.zkteco.autk.models.ZKLiveFaceManager;
 import com.zkteco.autk.utils.BitmapUtil;
 import com.zkteco.autk.utils.Logger;
 import com.zkteco.autk.utils.Utils;
+import com.zkteco.autk.dao.DatabaseUtils.ENROLL_TABLE;
+import com.zkteco.autk.dao.DatabaseUtils.IDENTIFY_TABLE;
 
 import java.io.IOException;
 
@@ -39,9 +44,12 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
     private static final int MSG_IDENTIFY_GET_TEMPLATE_SUCCESS = 6;
     private static final int MSG_IDENTIFY_FAIL = 7;
     private static final int MSG_IDENTIFY_SUCCESS = 8;
+    private static final int MSG_REFRESH_UI = 9;
 
     private final int CAMERA_WIDTH = CameraIdentify.CAMERA_WIDTH;
     private final int CAMERA_HEIGHT = CameraIdentify.CAMERA_HEIGHT;
+
+    private DatabaseHelper mDbHelper = null;
 
     private EnrollActivity mActivity = null;
     private CameraIdentify mCamera = null;
@@ -60,6 +68,7 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
         mModel = new EnrollModel();
         mCamera = new CameraIdentify(mActivity);
         mCamera.setCameraPreview(this);
+        mDbHelper = new DatabaseHelper(mActivity);
     }
 
     private void tryStartCamera() {
@@ -114,24 +123,61 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
         }
     }
 
-    public void recordName(String name) {
+    public void setName(String name) {
         mModel.getIdentifyInfo().name = name;
     }
 
-    public void recordId(String id) {
+    public String getName() {
+        return mModel.getIdentifyInfo().name;
+    }
+
+    public void setId(String id) {
         mModel.getIdentifyInfo().id = id;
     }
 
-    public void recordPhone(String phone) {
+    public String getId() {
+        return mModel.getIdentifyInfo().id;
+    }
+
+    public void setPhone(String phone) {
         mModel.getIdentifyInfo().phone = phone;
     }
 
-    public void recordFaceId(String faceId) {
+    public String getPhone() {
+        return mModel.getIdentifyInfo().phone;
+    }
+
+    public void setFaceId(String faceId) {
         mModel.getIdentifyInfo().faceId = faceId;
+    }
+
+    public String getFaceId() {
+        return mModel.getIdentifyInfo().faceId;
     }
 
     public boolean isLegalEnrollInfo() {
         return mModel.getIdentifyInfo().isLegalEnrollInfo();
+    }
+
+    public void resetInfo() {
+        mModel.getIdentifyInfo().reset();
+    }
+
+    private void saveAndResetInfo() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                ContentValues values = new ContentValues();
+                values.put(ENROLL_TABLE.KEY_NAME, mModel.getIdentifyInfo().id);
+                values.put(ENROLL_TABLE.KEY_FACE_ID, mModel.getIdentifyInfo().faceId);
+                values.put(ENROLL_TABLE.KEY_IDENTITY_ID, mModel.getIdentifyInfo().id);
+                values.put(ENROLL_TABLE.KEY_PHONE_NUMBER, mModel.getIdentifyInfo().phone);
+                DatabaseUtils.getInstance().insertCheckForUpdate(mDbHelper.getWritableDatabase(), ENROLL_TABLE.NAME, values,
+                        ENROLL_TABLE.KEY_IDENTITY_ID + " = '" + mModel.getIdentifyInfo().faceId + "'", null);
+                mModel.getIdentifyInfo().reset();
+                mHandler.obtainMessage(MSG_REFRESH_UI).sendToTarget();
+            }
+        }).start();
     }
 
     @Override
@@ -221,9 +267,10 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
                 case MSG_IDENTIFY_FAIL:
                     mActivity.toast(mActivity.getString(R.string.identify_fail));
                     break;
-                case MSG_IDENTIFY_SUCCESS:
+                case MSG_IDENTIFY_SUCCESS: {
                     mActivity.toast(mActivity.getString(R.string.identify_success) + "faceID=" + msg.obj);
-                    break;
+                }
+                break;
                 case MSG_ENROLL_GET_TEMPLATE_FAIL:
                     mActivity.setMode(EnrollActivity.MODE_ENROLLING);
                     mActivity.toast(mActivity.getString(R.string.extract_template_fail));
@@ -235,12 +282,13 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
                     mActivity.toast(mActivity.getString(R.string.db_add_template_fail));
                     break;
                 case MSG_ENROLL_EXISTED: {
-                    recordFaceId(msg.obj.toString());
+                    setFaceId(msg.obj.toString());
                     SimpleDialog alertDialog = new SimpleDialog(mActivity, "提示", "人脸已被注册\n" + "faceID=" + msg.obj) {
                         @Override
                         public void onDialogOK() {
                             mActivity.setMode(EnrollActivity.MODE_IDENTIFY);
-                            mActivity.refreshUI();
+                            resetInfo();
+                            mHandler.obtainMessage(MSG_REFRESH_UI).sendToTarget();
                         }
                     };
                     alertDialog.disableCancel(true);
@@ -248,16 +296,19 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
                 }
                 break;
                 case MSG_ENROLL_SUCCESS: {
-                    recordFaceId(msg.obj.toString());
+                    setFaceId(msg.obj.toString());
                     SimpleDialog alertDialog = new SimpleDialog(mActivity, "提示", "人脸注册成功\n" + "faceID=" + msg.obj) {
                         @Override
                         public void onDialogOK() {
                             mActivity.setMode(EnrollActivity.MODE_IDENTIFY);
-                            mActivity.refreshUI();
+                            saveAndResetInfo();
                         }
                     };
                     alertDialog.disableCancel(true);
                     alertDialog.show();
+                }
+                case MSG_REFRESH_UI: {
+                    mActivity.refreshUI();
                 }
                 break;
             }

@@ -29,5 +29,12 @@ public class EnrollModel implements IContract.IModel {
         public boolean isLegalEnrollInfo() {
             return !(TextUtils.isEmpty(name) || TextUtils.isEmpty(id) || TextUtils.isEmpty(phone));
         }
+
+        public void reset() {
+            name = null;
+            id = null;
+            phone = null;
+            faceId = null;
+        }
     }
 }
