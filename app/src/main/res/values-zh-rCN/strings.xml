@@ -15,7 +15,7 @@
     <string name="text_identify">识别面部</string>
     <string name="text_password">请输入密码</string>
     <string name="text_name">姓&#160;&#160;&#160;&#160;名:</string>
-    <string name="text_id">身份证:</string>
+    <string name="text_id">工&#160;&#160;&#160;&#160;号:</string>
     <string name="text_phone">手机号:</string>
     <string name="extract_template_fail">提取模板失败</string>
     <string name="db_add_template_success">添加模板成功</string>

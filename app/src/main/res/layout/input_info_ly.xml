@@ -19,8 +19,8 @@
         android:hint="@string/text_password"
         android:inputType="numberPassword"
         android:padding="10dp"
-        android:textColor="#FF2196F3"
-        android:textColorHint="#FF2196F3"
+        android:textColor="@color/colorSkyBlue"
+        android:textColorHint="@color/colorSkyBlue"
         android:textSize="20sp"
         android:visibility="gone" />
 

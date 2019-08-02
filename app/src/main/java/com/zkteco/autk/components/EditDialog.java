@@ -83,7 +83,7 @@ public abstract class EditDialog {
         title.setText(mTitle);
         title.setPadding(10, 10, 10, 10);
         title.setGravity(Gravity.CENTER);
-        title.setTextColor(Color.parseColor("#E4E4E4"));
+        title.setTextColor(Color.parseColor("#FFE4E4E4"));
         title.setTextSize(23);
         dialog.setCustomTitle(title);//设置字体
 

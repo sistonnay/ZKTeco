@@ -10,7 +10,7 @@
             <solid android:color="@android:color/transparent" />
             <stroke
                 android:width="2dp"
-                android:color="#4CAF50" />
+                android:color="@color/colorSkyBlue" />
             <padding android:bottom="4dp" />
         </shape>
     </item>
@@ -24,7 +24,7 @@
             <solid android:color="@android:color/transparent" />
             <stroke
                 android:width="2dp"
-                android:color="#FF2329D6" />
+                android:color="@color/colorLightBlue" />
             <padding android:bottom="4dp" />
         </shape>
     </item>

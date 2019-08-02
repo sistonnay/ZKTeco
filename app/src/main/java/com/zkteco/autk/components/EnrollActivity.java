@@ -29,6 +29,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
     public static final int MODE_CHECK_IN = 1;
     public static final int MODE_PRE_ENROLL = 2;
     public static final int MODE_ENROLLING = 3;
+    public static final int MODE_IDENTIFY_HANDLE = 4;
 
     private TextureView mPreVRect;
     private OverlayView mOverlayRect;
@@ -42,6 +43,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
     private ImageView mNextButton;
     private ImageView mEnrollButton;
 
+    private TextView mAlertText;
     private TextView mPassText;
     private TextView mNameText;
     private TextView mJobNumberText;
@@ -97,6 +99,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
         */
 
         mAlert = (LinearLayout) findViewById(R.id.ly_alert);
+        mAlertText = (TextView) mAlert.findViewById(R.id.tv_alert);
 
         mInputInfo = (LinearLayout) findViewById(R.id.ly_input_info);
         mBackButton = (ImageView) mInputInfo.findViewById(R.id.back);
@@ -131,6 +134,10 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
         return mode;
     }
 
+    public void updateAlert(String text) {
+        mAlertText.setText(text);
+    }
+
     public void refreshUI() {
         switch (mode) {
             case MODE_ENROLLING: {
@@ -160,6 +167,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
             break;
             case MODE_IDENTIFY: {
                 mAlert.setVisibility(View.VISIBLE);
+                mAlertText.setText(R.string.setup_enrollment_message);
                 mInputInfo.setVisibility(View.GONE);
                 mEnrollButton.setVisibility(View.VISIBLE);
                 mOverlayRect.setTheme(mIdentifyTheme);
@@ -179,6 +187,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
 
     @Override
     public void onBackPressed() {
+        mPresenter.removeMessages();
         switch (mode) {
             case MODE_ENROLLING:
             case MODE_PRE_ENROLL:
@@ -187,6 +196,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
                 mPresenter.resetInfo();
             }
             break;
+            case MODE_IDENTIFY_HANDLE:
             case MODE_IDENTIFY: {
                 super.onBackPressed();
             }
@@ -197,6 +207,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
 
     @Override
     public void onClick(View v) {
+        mPresenter.removeMessages();
         switch (v.getId()) {
             case R.id.back: {
                 onBackPressed();
@@ -223,6 +234,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
             break;
             case R.id.enroll: {
                 mode = MODE_CHECK_IN;
+                mPresenter.resetInfo();
                 refreshUI();
             }
             break;
@@ -232,6 +244,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
                     public void onDialogOK(String text) {
                         mPassText.setText(text);
                         mPresenter.setAdminPass(text);
+                        mInputInfo.setVisibility(View.VISIBLE);
                     }
                 };
                 dialog.passWordStyle(true);
@@ -249,7 +262,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
             }
             break;
             case R.id.tv_job_number: {
-                new EditDialog(this, R.string.dialog_title_job_number, InputType.TYPE_CLASS_TEXT) {
+                new EditDialog(this, R.string.dialog_title_job_number, InputType.TYPE_CLASS_NUMBER) {
                     @Override
                     public void onDialogOK(String text) {
                         mJobNumberText.setText(text);

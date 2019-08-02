@@ -78,14 +78,14 @@ public class DatabaseUtils {
         return rowId;
     }
 
-    public long insertFaceCheckInInfo(SQLiteOpenHelper helper, String faceId, long time) {
-        long rowId = -1;
+    public String insertFaceCheckInInfo(SQLiteOpenHelper helper, String faceId, long time) {
         EnrollModel.uploadInfo info = null;
         SQLiteDatabase db = helper.getWritableDatabase();
         try {
             db.beginTransaction();
 
-            Cursor cursor = query(db, ENROLL_TABLE.NAME, new String[]{ENROLL_TABLE.KEY_ID, ENROLL_TABLE.KEY_NAME},
+            Cursor cursor = query(db, ENROLL_TABLE.NAME,
+                    new String[]{ENROLL_TABLE.KEY_NAME, ENROLL_TABLE.KEY_JOB_NUMBER},
                     ENROLL_TABLE.KEY_FACE_ID + " = '" + faceId + "'", null, null);
             if (cursor != null) {
                 if (cursor.moveToFirst()) {
@@ -99,13 +99,13 @@ public class DatabaseUtils {
             }
 
             if (info == null) {
-                return -1;
+                return "";
             }
 
             ContentValues values = new ContentValues();
             values.put(IDENTIFY_TABLE.KEY_CHECK_IN_TIME, info.time);
             values.put(IDENTIFY_TABLE.KEY_JOB_NUMBER, info.job_number);
-            rowId = insertCheckForUpdate(db, IDENTIFY_TABLE.NAME, values,
+            long rowId = insertCheckForUpdate(db, IDENTIFY_TABLE.NAME, values,
                     IDENTIFY_TABLE.KEY_JOB_NUMBER + " = '" + info.job_number + "'", null);
 
             db.setTransactionSuccessful();
@@ -116,12 +116,12 @@ public class DatabaseUtils {
             }
         } catch (Exception e) {
             Logger.e(TAG, "error occurred while do db Transaction:", e);
-            return rowId;
+            return "";
         } finally {
             db.endTransaction();
             db.close();
         }
-        return rowId;
+        return info.job_number;
     }
 
     /**

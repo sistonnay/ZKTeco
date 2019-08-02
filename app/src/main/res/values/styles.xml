@@ -6,6 +6,7 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:windowBackground">@color/colorSkyBlue</item>
     </style>
 
     <style name="OverlayView_Enroll">
@@ -35,8 +36,8 @@
         <item name="android:windowSoftInputMode">stateAlwaysVisible</item>
         <item name="android:background">@drawable/edit_dialog_bg</item>
         <item name="android:textSize">20sp</item>
-        <item name="android:textColor">#E4E4E4</item>
-        <item name="android:textColorPrimary">#666666</item>
+        <item name="android:textColor">@color/colorTextWhite</item>
+        <item name="android:textColorPrimary">@color/colorSkyBlue</item>
     </style>
 
     <style name="RoundProgressBar_Default">

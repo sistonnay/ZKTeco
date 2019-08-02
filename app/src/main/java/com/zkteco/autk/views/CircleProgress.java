@@ -41,7 +41,7 @@ public class CircleProgress extends ImageView {
         y2 = (height + r / 2) / 2;
         rect1 = new RectF(x1, y1, x2, y2);
         for (i = 0; i < 360; i += 5) {
-            pPaint.setARGB((360 - i) * 255 / 360, 0, 0, 0);
+            pPaint.setARGB((360 - i) * 255 / 360, 35, 41, 214);
             canvas.drawArc(rect1, 180 - i + startAngle, 5, false, pPaint);
         }
         startAngle += 3;

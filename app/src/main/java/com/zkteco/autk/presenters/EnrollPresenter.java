@@ -42,7 +42,9 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
     private static final int MSG_IDENTIFY_GET_TEMPLATE_SUCCESS = 7;
     private static final int MSG_IDENTIFY_FAIL = 8;
     private static final int MSG_IDENTIFY_SUCCESS = 9;
-    private static final int MSG_REFRESH_UI = 10;
+    private static final int MSG_IDENTIFY_SUCCESS_ALERT = 10;
+    private static final int MSG_CONTINUE_IDENTIFY = 11;
+    private static final int MSG_IDENTIFY_BEGIN = 12;
 
     private final int CAMERA_WIDTH = CameraIdentify.CAMERA_WIDTH;
     private final int CAMERA_HEIGHT = CameraIdentify.CAMERA_HEIGHT;
@@ -65,9 +67,9 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
         mActivity = mView.get();
         mModel = new EnrollModel();
         mCamera = new CameraIdentify(mActivity);
-        mCamera.setCameraPreview(this);
         mDbHelper = new DatabaseHelper(mActivity);
         mHandler = new H(mActivity.getMainLooper());
+        mHandler.sendEmptyMessageDelayed(MSG_IDENTIFY_BEGIN, 5000); //延时3秒开始人脸识别，防止启动时卡死
     }
 
     private void tryStartCamera() {
@@ -194,12 +196,13 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
     }
 
     private void dbInsertCheckInInfo() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                DatabaseUtils.getInstance().insertFaceCheckInInfo(mDbHelper, getFaceId(), System.currentTimeMillis());
-            }
-        }).start();
+//        new Thread(new Runnable() {
+//            @Override
+//            public synchronized void run() {
+        setJobNumber(DatabaseUtils.getInstance().insertFaceCheckInInfo(mDbHelper, getFaceId(), System.currentTimeMillis()));
+        mHandler.obtainMessage(MSG_IDENTIFY_SUCCESS_ALERT).sendToTarget();
+//            }
+//        }).start();
     }
 
     @Override
@@ -277,6 +280,10 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
         }
     }
 
+    public void removeMessages() {
+        mHandler.removeMessages(MSG_CONTINUE_IDENTIFY);
+    }
+
     class H extends Handler {
         H(Looper looper) {
             super(looper);
@@ -285,34 +292,43 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
+                case MSG_IDENTIFY_BEGIN:
+                    mCamera.setCameraPreview(EnrollPresenter.this);
+                    break;
                 case MSG_IDENTIFY_GET_TEMPLATE_FAIL:
-                    mActivity.toast(mActivity.getString(R.string.extract_template_fail));
+                    //mActivity.toast(mActivity.getString(R.string.extract_template_fail));
                     break;
                 case MSG_IDENTIFY_GET_TEMPLATE_SUCCESS:
                     break;
                 case MSG_IDENTIFY_FAIL:
-                    mActivity.toast(mActivity.getString(R.string.identify_fail));
+                    //mActivity.toast(mActivity.getString(R.string.identify_fail));
                     break;
-                case MSG_IDENTIFY_SUCCESS:
+                case MSG_IDENTIFY_SUCCESS: {
+                    mActivity.setMode(EnrollActivity.MODE_IDENTIFY_HANDLE);
                     dbInsertCheckInInfo();
-                    break;
+                }
+                break;
+                case MSG_IDENTIFY_SUCCESS_ALERT: {
+                    mActivity.updateAlert(mActivity.getString(R.string.identify_success) + " 工号:" + getJobNumber());
+                    sendEmptyMessageDelayed(MSG_CONTINUE_IDENTIFY, 1500);
+                }
+                break;
                 case MSG_ENROLL_GET_TEMPLATE_FAIL:
                     mActivity.setMode(EnrollActivity.MODE_ENROLLING);
-                    mActivity.toast(mActivity.getString(R.string.extract_template_fail));
+                    //mActivity.toast(mActivity.getString(R.string.extract_template_fail));
                     break;
                 case MSG_ENROLL_GET_TEMPLATE_SUCCESS:
                     break;
-                case MSG_ENROLL_FAIL:
+                case MSG_ENROLL_FAIL: {
                     mActivity.setMode(EnrollActivity.MODE_ENROLLING);
-                    mActivity.toast(mActivity.getString(R.string.db_add_template_fail));
-                    break;
+                    //mActivity.toast(mActivity.getString(R.string.db_add_template_fail));
+                }
+                break;
                 case MSG_ENROLL_EXISTED: {
-                    SimpleDialog alertDialog = new SimpleDialog(mActivity, "提示", "人脸已被注册\n" + "faceID=" + getFaceId()) {
+                    SimpleDialog alertDialog = new SimpleDialog(mActivity, "提示", "人脸已经注册过!") {
                         @Override
                         public void onDialogOK() {
-                            mActivity.setMode(EnrollActivity.MODE_IDENTIFY);
-                            resetInfo();
-                            mHandler.obtainMessage(MSG_REFRESH_UI).sendToTarget();
+                            mHandler.obtainMessage(MSG_CONTINUE_IDENTIFY).sendToTarget();
                         }
                     };
                     alertDialog.disableCancel(true);
@@ -323,18 +339,18 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
                     dbInsertEnrollInfo();
                     break;
                 case MSG_ENROLL_SUCCESS: {
-                    SimpleDialog alertDialog = new SimpleDialog(mActivity, "提示", "人脸注册成功\n" + "Job-Number=" + getJobNumber()) {
+                    SimpleDialog alertDialog = new SimpleDialog(mActivity, "提示", "工号:" + getJobNumber() + "\n人脸注册成功!") {
                         @Override
                         public void onDialogOK() {
-                            mActivity.setMode(EnrollActivity.MODE_IDENTIFY);
-                            resetInfo();
-                            obtainMessage(MSG_REFRESH_UI).sendToTarget();
+                            obtainMessage(MSG_CONTINUE_IDENTIFY).sendToTarget();
                         }
                     };
                     alertDialog.disableCancel(true);
                     alertDialog.show();
                 }
-                case MSG_REFRESH_UI: {
+                case MSG_CONTINUE_IDENTIFY: {
+                    mActivity.setMode(EnrollActivity.MODE_IDENTIFY);
+                    resetInfo();
                     mActivity.refreshUI();
                 }
                 break;
