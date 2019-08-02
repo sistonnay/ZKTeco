@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 
 import com.zkteco.autk.models.EnrollModel;
+import com.zkteco.autk.models.ZKLiveFaceManager;
 import com.zkteco.autk.utils.Logger;
 import com.zkteco.autk.utils.Utils;
 
@@ -30,29 +31,55 @@ public class DatabaseUtils {
         return mDBUtils;
     }
 
-    public long insertEnrollInfo(SQLiteOpenHelper helper, EnrollModel.IdentifyInfo info) {
-        ContentValues values = new ContentValues();
-        values.put(ENROLL_TABLE.KEY_NAME, info.name);
-        values.put(ENROLL_TABLE.KEY_FACE_ID, info.faceId);
-        values.put(ENROLL_TABLE.KEY_IDENTITY_ID, info.id);
-        values.put(ENROLL_TABLE.KEY_PHONE_NUMBER, info.phone);
-        SQLiteDatabase db = helper.getWritableDatabase();
+    public void initFaceLibrary(SQLiteOpenHelper helper) {
+        SQLiteDatabase db = helper.getReadableDatabase();
         try {
             db.beginTransaction();
-            info.job_number = insertCheckForUpdate(db, ENROLL_TABLE.NAME, values,
-                    ENROLL_TABLE.KEY_FACE_ID + " = '" + info.faceId + "'", null);
-            db.setTransactionSuccessful();
+            Cursor cursor = query(db, ENROLL_TABLE.NAME, new String[]{ENROLL_TABLE.KEY_FACE_ID, ENROLL_TABLE.KEY_FACE_TEMPLATE},
+                    null, null, null);
+            if (cursor != null) {
+                while (cursor.moveToNext()) {
+                    String faceId = cursor.getString(cursor.getColumnIndex(ENROLL_TABLE.KEY_FACE_ID));
+                    byte[] template = cursor.getBlob(cursor.getColumnIndex(ENROLL_TABLE.KEY_FACE_TEMPLATE));
+                    ZKLiveFaceManager.getInstance().dbAdd(faceId, template);
+                    Logger.v(TAG, faceId + " has been added.");
+                }
+                cursor.close();
+            }
         } catch (Exception e) {
             Logger.e(TAG, "error occurred while do db Transaction:", e);
-            return -1;
         } finally {
             db.endTransaction();
             db.close();
         }
-        return info.job_number;
     }
 
-    public long insertFaceIdentifyAns(SQLiteOpenHelper helper, String faceId, long time) {
+    public long insertFaceEnrollInfo(SQLiteOpenHelper helper, EnrollModel.IdentifyInfo info) {
+        long rowId = -1;
+        ContentValues values = new ContentValues();
+        values.put(ENROLL_TABLE.KEY_NAME, info.name);
+        values.put(ENROLL_TABLE.KEY_JOB_NUMBER, info.job_number);
+        values.put(ENROLL_TABLE.KEY_PHONE_NUMBER, info.phone);
+        values.put(ENROLL_TABLE.KEY_FACE_ID, info.faceId);
+        values.put(ENROLL_TABLE.KEY_FACE_TEMPLATE, info.face_template);
+        SQLiteDatabase db = helper.getWritableDatabase();
+        try {
+            db.beginTransaction();
+            rowId = insertCheckForUpdate(db, ENROLL_TABLE.NAME, values,
+                    ENROLL_TABLE.KEY_FACE_ID + " = '" + info.faceId + "'", null);
+            db.setTransactionSuccessful();
+        } catch (Exception e) {
+            Logger.e(TAG, "error occurred while do db Transaction:", e);
+            return rowId;
+        } finally {
+            db.endTransaction();
+            db.close();
+        }
+        return rowId;
+    }
+
+    public long insertFaceCheckInInfo(SQLiteOpenHelper helper, String faceId, long time) {
+        long rowId = -1;
         EnrollModel.uploadInfo info = null;
         SQLiteDatabase db = helper.getWritableDatabase();
         try {
@@ -63,8 +90,8 @@ public class DatabaseUtils {
             if (cursor != null) {
                 if (cursor.moveToFirst()) {
                     info = new EnrollModel.uploadInfo();
-                    info.job_number = cursor.getInt(cursor.getColumnIndex(ENROLL_TABLE.KEY_ID));
                     info.name = cursor.getString(cursor.getColumnIndex(ENROLL_TABLE.KEY_NAME));
+                    info.job_number = cursor.getString(cursor.getColumnIndex(ENROLL_TABLE.KEY_JOB_NUMBER));
                     info.time = String.valueOf(time);
                     info.type = "face";
                 }
@@ -76,9 +103,9 @@ public class DatabaseUtils {
             }
 
             ContentValues values = new ContentValues();
-            values.put(IDENTIFY_TABLE.KEY_JOB_NUMBER, info.job_number);
             values.put(IDENTIFY_TABLE.KEY_CHECK_IN_TIME, info.time);
-            long rowId = insertCheckForUpdate(db, IDENTIFY_TABLE.NAME, values,
+            values.put(IDENTIFY_TABLE.KEY_JOB_NUMBER, info.job_number);
+            rowId = insertCheckForUpdate(db, IDENTIFY_TABLE.NAME, values,
                     IDENTIFY_TABLE.KEY_JOB_NUMBER + " = '" + info.job_number + "'", null);
 
             db.setTransactionSuccessful();
@@ -86,16 +113,15 @@ public class DatabaseUtils {
             if (rowId != -1) {
                 info.upload();
                 Logger.v(TAG, info.toString());
-                return info.job_number;
             }
         } catch (Exception e) {
             Logger.e(TAG, "error occurred while do db Transaction:", e);
-            return -1;
+            return rowId;
         } finally {
             db.endTransaction();
             db.close();
         }
-        return -1;
+        return rowId;
     }
 
     /**
@@ -294,8 +320,9 @@ public class DatabaseUtils {
         String NAME = "enroll_info";
         String KEY_NAME = "name";
         String KEY_FACE_ID = "face_id";
-        String KEY_IDENTITY_ID = "id";
+        String KEY_JOB_NUMBER = "job_number";
         String KEY_PHONE_NUMBER = "phone_number";
+        String KEY_FACE_TEMPLATE = "face_template";
     }
 
     public interface IDENTIFY_TABLE extends TABLE {

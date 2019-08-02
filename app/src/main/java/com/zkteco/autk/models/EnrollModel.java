@@ -15,6 +15,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 
+import static android.os.Build.SERIAL;
+
 /**
  * author: Created by Ho Dao on 2019/7/29 0029 00:29
  * email: 372022839@qq.com (github: sistonnay)
@@ -33,29 +35,30 @@ public class EnrollModel implements IContract.IModel {
 
     public static class IdentifyInfo {
         public String name;
-        public String id;
         public String phone;
         public String faceId;
-        public long job_number = -1;
+        public String job_number;
+        public byte[] face_template;
 
         public boolean isLegalEnrollInfo() {
-            return !(TextUtils.isEmpty(name) || TextUtils.isEmpty(id) || TextUtils.isEmpty(phone));
+            return !(TextUtils.isEmpty(name) || TextUtils.isEmpty(job_number) || TextUtils.isEmpty(phone));
         }
 
         public void reset() {
             name = null;
-            id = null;
             phone = null;
             faceId = null;
-            job_number = -1;
+            job_number = null;
+            face_template = null;
         }
     }
 
     public static class uploadInfo {
         public String name;
-        public long job_number;
+        public String job_number;
         public String time;
         public String type = "face";
+        public String deviceId = SERIAL;
 
         public void upload() {
             OkHttpClient client = new OkHttpClient();
@@ -90,6 +93,7 @@ public class EnrollModel implements IContract.IModel {
                 jsonObj.put("Number", job_number);//可转化为int
                 jsonObj.put("Time", time);   //可转化为long的毫秒级时间戳
                 jsonObj.put("Method", type); //字符串，如"face"
+                jsonObj.put("deviceId", deviceId); //字符串，设备SN号
                 return jsonObj;
             } catch (JSONException e) {
                 e.printStackTrace();

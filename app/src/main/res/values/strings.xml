@@ -18,7 +18,7 @@
     <string name="text_id">ID:</string>
     <string name="text_name">Name:</string>
     <string name="text_phone">Phone:</string>
-    <string name="dialog_title_id">Input your ID number</string>
+    <string name="dialog_title_job_number">Input your job number</string>
     <string name="dialog_title_name">Input your name</string>
     <string name="dialog_title_pass">Input admin password</string>
     <string name="dialog_title_phone">Input your phone number</string>

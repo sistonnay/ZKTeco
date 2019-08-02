@@ -44,7 +44,7 @@
             android:textSize="18sp" />
 
         <TextView
-            android:id="@+id/tv_id"
+            android:id="@+id/tv_job_number"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="5"

@@ -44,7 +44,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
 
     private TextView mPassText;
     private TextView mNameText;
-    private TextView mIDText;
+    private TextView mJobNumberText;
     private TextView mPhoneText;
 
     private int mode = MODE_IDENTIFY;
@@ -109,8 +109,8 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
         mRegisterInfo = (LinearLayout) mInputInfo.findViewById(R.id.ly_register_info);
         mNameText = (TextView) mRegisterInfo.findViewById(R.id.tv_name);
         mNameText.setOnClickListener(this);
-        mIDText = (TextView) mRegisterInfo.findViewById(R.id.tv_id);
-        mIDText.setOnClickListener(this);
+        mJobNumberText = (TextView) mRegisterInfo.findViewById(R.id.tv_job_number);
+        mJobNumberText.setOnClickListener(this);
         mPhoneText = (TextView) mRegisterInfo.findViewById(R.id.tv_phone);
         mPhoneText.setOnClickListener(this);
 
@@ -167,7 +167,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
             break;
         }
         mNameText.setText(mPresenter.getName());
-        mIDText.setText(mPresenter.getId());
+        mJobNumberText.setText(mPresenter.getJobNumber());
         mPhoneText.setText(mPresenter.getPhone());
         mPassText.setText(mPresenter.getAdminPass());
     }
@@ -248,12 +248,12 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
                 }.show();
             }
             break;
-            case R.id.tv_id: {
-                new EditDialog(this, R.string.dialog_title_id, InputType.TYPE_CLASS_TEXT) {
+            case R.id.tv_job_number: {
+                new EditDialog(this, R.string.dialog_title_job_number, InputType.TYPE_CLASS_TEXT) {
                     @Override
                     public void onDialogOK(String text) {
-                        mIDText.setText(text);
-                        mPresenter.setId(text);
+                        mJobNumberText.setText(text);
+                        mPresenter.setJobNumber(text);
                     }
                 }.show();
             }

@@ -11,6 +11,8 @@ import android.text.TextUtils;
 import android.widget.TextView;
 
 import com.zkteco.autk.R;
+import com.zkteco.autk.dao.DatabaseHelper;
+import com.zkteco.autk.dao.DatabaseUtils;
 import com.zkteco.autk.models.ZKLiveFaceManager;
 import com.zkteco.autk.utils.PermissionUtil;
 
@@ -33,6 +35,7 @@ public class WelcomeActivity extends BaseActivity {
 
     private String licFilePath = null;
     private TextView mAlertText = null;
+    private DatabaseHelper mHelper = null;
 
     @SuppressLint("HandlerLeak")
     private Handler mHandler = new Handler() {
@@ -85,6 +88,7 @@ public class WelcomeActivity extends BaseActivity {
             dialog.disableCancel(true);
             dialog.show();
         } else {
+            mHelper = new DatabaseHelper(this);
             init("");
         }
     }
@@ -117,6 +121,7 @@ public class WelcomeActivity extends BaseActivity {
             @Override
             public void run() {
                 if (ZKLiveFaceManager.getInstance().setParameterAndInit(path)) {
+                    DatabaseUtils.getInstance().initFaceLibrary(mHelper);
                     mHandler.obtainMessage(INIT_MSG_SUCCESS).sendToTarget();
                 } else {
                     mHandler.obtainMessage(INIT_MSG_FAIL).sendToTarget();

@@ -22,9 +22,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             + ENROLL_TABLE.NAME + " ("
             + ENROLL_TABLE.KEY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
             + ENROLL_TABLE.KEY_NAME + " TEXT  NOT NULL,"
-            + ENROLL_TABLE.KEY_FACE_ID + " TEXT  NOT NULL,"
-            + ENROLL_TABLE.KEY_IDENTITY_ID + " TEXT  NOT NULL,"
-            + ENROLL_TABLE.KEY_PHONE_NUMBER + " TEXT NOT NULL)";
+            + ENROLL_TABLE.KEY_FACE_ID + " TEXT,"
+            + ENROLL_TABLE.KEY_JOB_NUMBER + " TEXT  NOT NULL,"
+            + ENROLL_TABLE.KEY_FACE_TEMPLATE + " BLOB  NOT NULL,"
+            + ENROLL_TABLE.KEY_PHONE_NUMBER + " TEXT )";
 
     private final String sql_create_identify_tb = "CREATE TABLE "
             + IDENTIFY_TABLE.NAME + " ("

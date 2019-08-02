@@ -55,10 +55,9 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
     private boolean hasTextureListener = false;
 
     private Handler mHandler;
-    private byte[] mTemplate = null;
+
     private long preTimeMillis = 0;
     private long currTimeMillis = 0;
-    private String faceId = null;
 
     private String mAdminPass = null;
 
@@ -131,12 +130,12 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
         return mModel.getIdentifyInfo().name;
     }
 
-    public void setId(String id) {
-        mModel.getIdentifyInfo().id = id;
+    public void setJobNumber(String jobNumber) {
+        mModel.getIdentifyInfo().job_number = jobNumber;
     }
 
-    public String getId() {
-        return mModel.getIdentifyInfo().id;
+    public String getJobNumber() {
+        return mModel.getIdentifyInfo().job_number;
     }
 
     public void setPhone(String phone) {
@@ -153,6 +152,14 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
 
     public String getFaceId() {
         return mModel.getIdentifyInfo().faceId;
+    }
+
+    public byte[] getTemplate() {
+        return mModel.getIdentifyInfo().face_template;
+    }
+
+    public void setTemplate(byte[] template) {
+        mModel.getIdentifyInfo().face_template = template;
     }
 
     public boolean isLegalEnrollInfo() {
@@ -172,16 +179,25 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
         mModel.getIdentifyInfo().reset();
     }
 
-    private void saveAndResetInfo() {
+    private void dbInsertEnrollInfo() {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                long job_number = DatabaseUtils.getInstance().insertEnrollInfo(mDbHelper, mModel.getIdentifyInfo());
-                if (job_number != -1) {
-                    mHandler.obtainMessage(MSG_ENROLL_SUCCESS, String.format("%08d", job_number)).sendToTarget();
+                long rowId = DatabaseUtils.getInstance().insertFaceEnrollInfo(mDbHelper, mModel.getIdentifyInfo());
+                if (rowId != -1) {
+                    mHandler.obtainMessage(MSG_ENROLL_SUCCESS).sendToTarget();
                 } else {
                     mHandler.obtainMessage(MSG_ENROLL_FAIL).sendToTarget();
                 }
+            }
+        }).start();
+    }
+
+    private void dbInsertCheckInInfo() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                DatabaseUtils.getInstance().insertFaceCheckInInfo(mDbHelper, getFaceId(), System.currentTimeMillis());
             }
         }).start();
     }
@@ -225,32 +241,36 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
     }
 
     private void syncIdentify(final byte[] data) {
-        mTemplate = getTemplate(data, CAMERA_WIDTH, CAMERA_HEIGHT, DECODE_AS_BITMAP);
-        if (mTemplate == null) {
+        byte[] template = getTemplate(data, CAMERA_WIDTH, CAMERA_HEIGHT, DECODE_AS_BITMAP);
+        if (template == null) {
             mHandler.obtainMessage(MSG_IDENTIFY_GET_TEMPLATE_FAIL).sendToTarget();
             return;
         }
-        String id = ZKLiveFaceManager.getInstance().identify(mTemplate);
+        String id = ZKLiveFaceManager.getInstance().identify(template);
         if (TextUtils.isEmpty(id)) {
             mHandler.obtainMessage(MSG_IDENTIFY_FAIL).sendToTarget();
         } else {
-            mHandler.obtainMessage(MSG_IDENTIFY_SUCCESS, id).sendToTarget();
+            setFaceId(id);
+            mHandler.obtainMessage(MSG_IDENTIFY_SUCCESS).sendToTarget();
         }
     }
 
     private void syncEnroll(final byte[] data) {
-        mTemplate = getTemplate(data, CAMERA_WIDTH, CAMERA_HEIGHT, DECODE_AS_BITMAP);
-        if (mTemplate == null) {
+        byte[] template = getTemplate(data, CAMERA_WIDTH, CAMERA_HEIGHT, DECODE_AS_BITMAP);
+        if (template == null) {
             mHandler.obtainMessage(MSG_ENROLL_GET_TEMPLATE_FAIL).sendToTarget();
             return;
         }
-        faceId = ZKLiveFaceManager.getInstance().identify(mTemplate);
-        if (faceId != null) {
-            mHandler.obtainMessage(MSG_ENROLL_EXISTED, faceId).sendToTarget();
+        String id = ZKLiveFaceManager.getInstance().identify(template);
+        if (id != null) {
+            setFaceId(id);
+            mHandler.obtainMessage(MSG_ENROLL_EXISTED).sendToTarget();
         } else {
-            faceId = "faceID_" + System.currentTimeMillis();
-            if (ZKLiveFaceManager.getInstance().dbAdd(faceId, mTemplate)) {
-                mHandler.obtainMessage(MSG_ENROLL_ADDED, faceId).sendToTarget();
+            id = "FID_" + System.currentTimeMillis();
+            if (ZKLiveFaceManager.getInstance().dbAdd(id, template)) {
+                setFaceId(id);
+                setTemplate(template);
+                mHandler.obtainMessage(MSG_ENROLL_ADDED).sendToTarget();
             } else {
                 mHandler.obtainMessage(MSG_ENROLL_FAIL).sendToTarget();
             }
@@ -273,11 +293,9 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
                 case MSG_IDENTIFY_FAIL:
                     mActivity.toast(mActivity.getString(R.string.identify_fail));
                     break;
-                case MSG_IDENTIFY_SUCCESS: {
-                    mActivity.toast(mActivity.getString(R.string.identify_success) + "faceID=" + msg.obj);
-                    DatabaseUtils.getInstance().insertFaceIdentifyAns(mDbHelper, msg.obj.toString(), System.currentTimeMillis());
-                }
-                break;
+                case MSG_IDENTIFY_SUCCESS:
+                    dbInsertCheckInInfo();
+                    break;
                 case MSG_ENROLL_GET_TEMPLATE_FAIL:
                     mActivity.setMode(EnrollActivity.MODE_ENROLLING);
                     mActivity.toast(mActivity.getString(R.string.extract_template_fail));
@@ -289,8 +307,7 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
                     mActivity.toast(mActivity.getString(R.string.db_add_template_fail));
                     break;
                 case MSG_ENROLL_EXISTED: {
-                    setFaceId(msg.obj.toString());
-                    SimpleDialog alertDialog = new SimpleDialog(mActivity, "提示", "人脸已被注册\n" + "faceID=" + msg.obj) {
+                    SimpleDialog alertDialog = new SimpleDialog(mActivity, "提示", "人脸已被注册\n" + "faceID=" + getFaceId()) {
                         @Override
                         public void onDialogOK() {
                             mActivity.setMode(EnrollActivity.MODE_IDENTIFY);
@@ -302,13 +319,11 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
                     alertDialog.show();
                 }
                 break;
-                case MSG_ENROLL_ADDED: {
-                    setFaceId(msg.obj.toString());
-                    saveAndResetInfo();
-                }
-                break;
+                case MSG_ENROLL_ADDED:
+                    dbInsertEnrollInfo();
+                    break;
                 case MSG_ENROLL_SUCCESS: {
-                    SimpleDialog alertDialog = new SimpleDialog(mActivity, "提示", "人脸注册成功\n" + "Job-Number=" + msg.obj) {
+                    SimpleDialog alertDialog = new SimpleDialog(mActivity, "提示", "人脸注册成功\n" + "Job-Number=" + getJobNumber()) {
                         @Override
                         public void onDialogOK() {
                             mActivity.setMode(EnrollActivity.MODE_IDENTIFY);
