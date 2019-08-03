@@ -228,6 +228,9 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
                         toast("Name or ID or Phone Error!");
                         return;
                     }
+                } else if (mode == MODE_ENROLLING) {
+                    mPresenter.resetInfo();
+                    mode = MODE_PRE_ENROLL;
                 }
                 refreshUI();
             }

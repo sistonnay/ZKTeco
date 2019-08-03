@@ -8,6 +8,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.text.TextUtils;
+import android.view.WindowManager;
 import android.widget.TextView;
 
 import com.zkteco.autk.R;
@@ -66,6 +67,8 @@ public class WelcomeActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
         //PermissionUtil.getInstance().authorize(this);
         PermissionUtil.getInstance().verifyPermissions(this);
 

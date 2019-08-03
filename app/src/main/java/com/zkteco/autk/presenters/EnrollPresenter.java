@@ -44,7 +44,8 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
     private static final int MSG_IDENTIFY_SUCCESS = 9;
     private static final int MSG_IDENTIFY_SUCCESS_ALERT = 10;
     private static final int MSG_CONTINUE_IDENTIFY = 11;
-    private static final int MSG_IDENTIFY_BEGIN = 12;
+    private static final int MSG_CONTINUE_ENROLL = 12;
+    private static final int MSG_IDENTIFY_BEGIN = 13;
 
     private final int CAMERA_WIDTH = CameraIdentify.CAMERA_WIDTH;
     private final int CAMERA_HEIGHT = CameraIdentify.CAMERA_HEIGHT;
@@ -284,6 +285,10 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
         mHandler.removeMessages(MSG_CONTINUE_IDENTIFY);
     }
 
+    public void continueIdentify() {
+        mHandler.sendEmptyMessage(MSG_CONTINUE_IDENTIFY);
+    }
+
     class H extends Handler {
         H(Looper looper) {
             super(looper);
@@ -328,7 +333,7 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
                     SimpleDialog alertDialog = new SimpleDialog(mActivity, "提示", "人脸已经注册过!") {
                         @Override
                         public void onDialogOK() {
-                            mHandler.obtainMessage(MSG_CONTINUE_IDENTIFY).sendToTarget();
+                            mHandler.obtainMessage(MSG_CONTINUE_ENROLL).sendToTarget();
                         }
                     };
                     alertDialog.disableCancel(true);
@@ -342,12 +347,18 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
                     SimpleDialog alertDialog = new SimpleDialog(mActivity, "提示", "工号:" + getJobNumber() + "\n人脸注册成功!") {
                         @Override
                         public void onDialogOK() {
-                            obtainMessage(MSG_CONTINUE_IDENTIFY).sendToTarget();
+                            obtainMessage(MSG_CONTINUE_ENROLL).sendToTarget();
                         }
                     };
                     alertDialog.disableCancel(true);
                     alertDialog.show();
                 }
+                case MSG_CONTINUE_ENROLL: {
+                    mActivity.setMode(EnrollActivity.MODE_PRE_ENROLL);
+                    resetInfo();
+                    mActivity.refreshUI();
+                }
+                break;
                 case MSG_CONTINUE_IDENTIFY: {
                     mActivity.setMode(EnrollActivity.MODE_IDENTIFY);
                     resetInfo();

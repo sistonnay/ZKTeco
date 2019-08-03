@@ -3,11 +3,14 @@ package com.zkteco.autk.models;
 import android.text.TextUtils;
 
 import com.zkteco.autk.IContract;
+import com.zkteco.autk.utils.FileUtil;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import okhttp3.FormBody;
 import okhttp3.MediaType;
@@ -57,7 +60,7 @@ public class EnrollModel implements IContract.IModel {
         public String name;
         public String job_number;
         public String time;
-        public String type = "face";
+        public String type = "人脸识别";
         public String deviceId = SERIAL;
 
         public void upload() {
@@ -65,7 +68,7 @@ public class EnrollModel implements IContract.IModel {
             RequestBody requestBody = FormBody.create(
                     MediaType.parse("application/json; charset=utf-8"), toString());
             Request request = new Request.Builder()
-                    .url("https://www.google.com")//请求的url
+                    .url(getUrlFromFile("/sdcard/config.json"))//请求的url
                     .post(requestBody)
                     .build();
             okhttp3.Call call = client.newCall(request);
@@ -89,11 +92,12 @@ public class EnrollModel implements IContract.IModel {
         public JSONObject toJSON() {
             JSONObject jsonObj = new JSONObject();
             try {
-                jsonObj.put("Name", name);   //字符串，如"张三"
-                jsonObj.put("Number", job_number);//可转化为int
-                jsonObj.put("Time", time);   //可转化为long的毫秒级时间戳
-                jsonObj.put("Method", type); //字符串，如"face"
-                jsonObj.put("deviceId", deviceId); //字符串，设备SN号
+                jsonObj.put("userName", name);   //字符串，如"张三"
+                jsonObj.put("CardNo", job_number);//可转化为int
+
+                jsonObj.put("verifyTime", stamp2DateTime(time));  //time为可转化为long的毫秒级时间戳
+                jsonObj.put("getPastType", type); //字符串，如"人脸识别"
+                jsonObj.put("storageNo", deviceId); //字符串，设备SN号
                 return jsonObj;
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -104,6 +108,25 @@ public class EnrollModel implements IContract.IModel {
         @Override
         public String toString() {
             return toJSON().toString();
+        }
+
+        public String stamp2DateTime(String stamp) {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss");
+            return sdf.format(new Date(Long.parseLong(stamp))); // 时间戳转换日期
+        }
+
+        public String getUrlFromFile(String fileName) {
+            String jsonString = FileUtil.getJSON(fileName);
+            if (jsonString == null) {
+                return "http://www.googleeeeeeeee.com";
+            }
+            try {
+                JSONObject json = new JSONObject(jsonString);
+                return json.getString("url");
+            } catch (JSONException e) {
+                e.printStackTrace();
+                return "http://www.googleeeeeeeee.com";
+            }
         }
     }
 }

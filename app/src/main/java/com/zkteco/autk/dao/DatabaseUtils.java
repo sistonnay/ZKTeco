@@ -93,7 +93,7 @@ public class DatabaseUtils {
                     info.name = cursor.getString(cursor.getColumnIndex(ENROLL_TABLE.KEY_NAME));
                     info.job_number = cursor.getString(cursor.getColumnIndex(ENROLL_TABLE.KEY_JOB_NUMBER));
                     info.time = String.valueOf(time);
-                    info.type = "face";
+                    info.type = "人脸识别";
                 }
                 cursor.close();
             }
