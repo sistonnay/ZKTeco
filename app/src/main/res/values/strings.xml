@@ -22,4 +22,5 @@
     <string name="dialog_title_name">Input your name</string>
     <string name="dialog_title_pass">Input admin password</string>
     <string name="dialog_title_phone">Input your phone number</string>
+    <string name="dialog_title_url">Input request url</string>
 </resources>

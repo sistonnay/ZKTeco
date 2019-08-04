@@ -4,6 +4,7 @@
     <string name="dialog_title_auth">激活状态</string>
     <string name="dialog_title_pass">输入管理员密码</string>
     <string name="dialog_title_name">输入您的名字</string>
+    <string name="dialog_title_url">输入请求网址</string>
     <string name="dialog_title_job_number">输入您的工号</string>
     <string name="dialog_title_phone">输入11位手机号码</string>
     <string name="dialog_message_auth">人脸识别模块未激活\n机器码:%2$s\n设备指纹路径:\n%1$s\n点击确认选择license</string>

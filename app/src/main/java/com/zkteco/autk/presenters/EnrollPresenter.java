@@ -1,5 +1,6 @@
 package com.zkteco.autk.presenters;
 
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -22,6 +23,8 @@ import com.zkteco.autk.utils.Logger;
 import com.zkteco.autk.utils.Utils;
 
 import java.io.IOException;
+
+import static android.content.Context.MODE_PRIVATE;
 
 /**
  * author: Created by Ho Dao on 2019/7/29 0029 00:30
@@ -50,6 +53,7 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
     private final int CAMERA_WIDTH = CameraIdentify.CAMERA_WIDTH;
     private final int CAMERA_HEIGHT = CameraIdentify.CAMERA_HEIGHT;
 
+    private SharedPreferences mSP = null;
     private DatabaseHelper mDbHelper = null;
 
     private EnrollActivity mActivity = null;
@@ -123,6 +127,22 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
             mCamera.release();
             Logger.d(TAG, "activity onDestroy and camera released");
         }
+    }
+
+    public String getUploadUrl() {
+        if (mSP == null) {
+            mSP = mActivity.getSharedPreferences("HttpParams", MODE_PRIVATE);
+        }
+        return mSP.getString("url", Utils.URL);
+    }
+
+    public void setUploadUrl(String url) {
+        if (mSP == null) {
+            mSP = mActivity.getSharedPreferences("HttpParams", MODE_PRIVATE);
+        }
+        SharedPreferences.Editor editor = mSP.edit();
+        editor.putString("url", url);
+        editor.commit();
     }
 
     public void setName(String name) {
@@ -200,7 +220,7 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
 //        new Thread(new Runnable() {
 //            @Override
 //            public synchronized void run() {
-        setJobNumber(DatabaseUtils.getInstance().insertFaceCheckInInfo(mDbHelper, getFaceId(), System.currentTimeMillis()));
+        setJobNumber(DatabaseUtils.getInstance().insertFaceCheckInInfo(mDbHelper, getFaceId(), System.currentTimeMillis(), getUploadUrl()));
         mHandler.obtainMessage(MSG_IDENTIFY_SUCCESS_ALERT).sendToTarget();
 //            }
 //        }).start();

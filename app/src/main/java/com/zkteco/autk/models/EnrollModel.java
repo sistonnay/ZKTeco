@@ -13,7 +13,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import okhttp3.FormBody;
-import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -63,13 +62,15 @@ public class EnrollModel implements IContract.IModel {
         public String type = "人脸识别";
         public String deviceId = SERIAL;
 
-        public void upload() {
+        public void upload(String url) {
             OkHttpClient client = new OkHttpClient();
-            RequestBody requestBody = FormBody.create(
-                    MediaType.parse("application/json; charset=utf-8"), toString());
+            RequestBody formBody = new FormBody.Builder()//form表单
+                    .add("JSONOBJECT", toString())
+                    .build();
+
             Request request = new Request.Builder()
-                    .url(getUrlFromFile("/sdcard/config.json"))//请求的url
-                    .post(requestBody)
+                    .url(url)//请求的url
+                    .post(formBody)
                     .build();
             okhttp3.Call call = client.newCall(request);
             //异步请求，若采用同步请求的方式最好在线程中执行
@@ -94,7 +95,6 @@ public class EnrollModel implements IContract.IModel {
             try {
                 jsonObj.put("userName", name);   //字符串，如"张三"
                 jsonObj.put("CardNo", job_number);//可转化为int
-
                 jsonObj.put("verifyTime", stamp2DateTime(time));  //time为可转化为long的毫秒级时间戳
                 jsonObj.put("getPastType", type); //字符串，如"人脸识别"
                 jsonObj.put("storageNo", deviceId); //字符串，设备SN号

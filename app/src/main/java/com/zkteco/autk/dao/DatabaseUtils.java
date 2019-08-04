@@ -78,7 +78,7 @@ public class DatabaseUtils {
         return rowId;
     }
 
-    public String insertFaceCheckInInfo(SQLiteOpenHelper helper, String faceId, long time) {
+    public String insertFaceCheckInInfo(SQLiteOpenHelper helper, String faceId, long time, String url) {
         EnrollModel.uploadInfo info = null;
         SQLiteDatabase db = helper.getWritableDatabase();
         try {
@@ -111,7 +111,7 @@ public class DatabaseUtils {
             db.setTransactionSuccessful();
 
             if (rowId != -1) {
-                info.upload();
+                info.upload(url);
                 Logger.v(TAG, info.toString());
             }
         } catch (Exception e) {

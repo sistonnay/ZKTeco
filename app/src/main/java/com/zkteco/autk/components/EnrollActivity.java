@@ -152,7 +152,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
                 mInputInfo.setVisibility(View.VISIBLE);
                 mRegisterInfo.setVisibility(View.VISIBLE);
                 mPassText.setVisibility(View.GONE);
-                mEnrollButton.setVisibility(View.GONE);
+                mEnrollButton.setVisibility(View.VISIBLE);
                 mOverlayRect.setTheme(mEnrollTheme);
             }
             break;
@@ -236,9 +236,20 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
             }
             break;
             case R.id.enroll: {
-                mode = MODE_CHECK_IN;
-                mPresenter.resetInfo();
-                refreshUI();
+                if (mode == MODE_IDENTIFY) {
+                    mode = MODE_CHECK_IN;
+                    mPresenter.resetInfo();
+                    refreshUI();
+                } else if (mode == MODE_PRE_ENROLL) {
+                    new EditDialog(this, R.string.dialog_title_url, InputType.TYPE_CLASS_TEXT) {
+                        @Override
+                        public void onDialogOK(String text) {
+                            if (!TextUtils.isEmpty(text)) {
+                                mPresenter.setUploadUrl(text);
+                            }
+                        }
+                    }.show();
+                }
             }
             break;
             case R.id.tv_password: {
