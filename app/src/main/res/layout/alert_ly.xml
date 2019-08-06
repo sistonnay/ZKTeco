@@ -16,6 +16,6 @@
         android:layout_margin="20dp"
         android:gravity="center"
         android:text="@string/setup_enrollment_message"
-        android:textColor="@android:color/holo_blue_light"
+        android:textColor="@color/colorTextSkyBlue"
         android:textSize="20sp" />
 </LinearLayout>

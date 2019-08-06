@@ -23,4 +23,6 @@
     <string name="dialog_title_pass">Input admin password</string>
     <string name="dialog_title_phone">Input your phone number</string>
     <string name="dialog_title_url">Input request url</string>
+    <string name="text_ip_input_label">IP:</string>
+    <string name="text_port_input_label">Port:</string>
 </resources>

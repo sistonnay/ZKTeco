@@ -12,6 +12,7 @@ import android.widget.TextView;
 
 import com.zkteco.autk.R;
 import com.zkteco.autk.presenters.EnrollPresenter;
+import com.zkteco.autk.utils.Logger;
 import com.zkteco.autk.utils.Utils;
 import com.zkteco.autk.views.OverlayView;
 
@@ -27,9 +28,8 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
     public static final int MODE_NULL = -1;
     public static final int MODE_IDENTIFY = 0;
     public static final int MODE_CHECK_IN = 1;
-    public static final int MODE_PRE_ENROLL = 2;
-    public static final int MODE_ENROLLING = 3;
-    public static final int MODE_IDENTIFY_HANDLE = 4;
+    public static final int MODE_ENTERING = 2;
+    public static final int MODE_ENROLL = 3;
 
     private TextureView mPreVRect;
     private OverlayView mOverlayRect;
@@ -140,20 +140,12 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
 
     public void refreshUI() {
         switch (mode) {
-            case MODE_ENROLLING: {
-                mAlert.setVisibility(View.GONE);
-                mInputInfo.setVisibility(View.VISIBLE);
-                mEnrollButton.setVisibility(View.GONE);
-                mOverlayRect.setTheme(mEnrollTheme);
-            }
-            break;
-            case MODE_PRE_ENROLL: {
-                mAlert.setVisibility(View.GONE);
-                mInputInfo.setVisibility(View.VISIBLE);
-                mRegisterInfo.setVisibility(View.VISIBLE);
-                mPassText.setVisibility(View.GONE);
+            case MODE_IDENTIFY: {
+                mAlert.setVisibility(View.VISIBLE);
+                mAlertText.setText(R.string.setup_enrollment_message);
+                mInputInfo.setVisibility(View.GONE);
                 mEnrollButton.setVisibility(View.VISIBLE);
-                mOverlayRect.setTheme(mEnrollTheme);
+                mOverlayRect.setTheme(mIdentifyTheme);
             }
             break;
             case MODE_CHECK_IN: {
@@ -165,12 +157,20 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
                 mOverlayRect.setTheme(mIdentifyTheme);
             }
             break;
-            case MODE_IDENTIFY: {
-                mAlert.setVisibility(View.VISIBLE);
-                mAlertText.setText(R.string.setup_enrollment_message);
-                mInputInfo.setVisibility(View.GONE);
+            case MODE_ENTERING: {
+                mAlert.setVisibility(View.GONE);
+                mInputInfo.setVisibility(View.VISIBLE);
+                mRegisterInfo.setVisibility(View.VISIBLE);
+                mPassText.setVisibility(View.GONE);
                 mEnrollButton.setVisibility(View.VISIBLE);
-                mOverlayRect.setTheme(mIdentifyTheme);
+                mOverlayRect.setTheme(mEnrollTheme);
+            }
+            break;
+            case MODE_ENROLL: {
+                mAlert.setVisibility(View.GONE);
+                mInputInfo.setVisibility(View.VISIBLE);
+                mEnrollButton.setVisibility(View.GONE);
+                mOverlayRect.setTheme(mEnrollTheme);
             }
             break;
         }
@@ -187,27 +187,24 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
 
     @Override
     public void onBackPressed() {
-        mPresenter.removeMessages();
         switch (mode) {
-            case MODE_ENROLLING:
-            case MODE_PRE_ENROLL:
+            case MODE_ENROLL:
+            case MODE_ENTERING:
             case MODE_CHECK_IN: {
                 mode = MODE_IDENTIFY;
                 mPresenter.resetInfo();
+                refreshUI();
             }
             break;
-            case MODE_IDENTIFY_HANDLE:
             case MODE_IDENTIFY: {
                 super.onBackPressed();
             }
             break;
         }
-        refreshUI();
     }
 
     @Override
     public void onClick(View v) {
-        mPresenter.removeMessages();
         switch (v.getId()) {
             case R.id.back: {
                 onBackPressed();
@@ -216,21 +213,21 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
             case R.id.next: {
                 if (mode == MODE_CHECK_IN) {
                     if (TextUtils.equals(mPresenter.getAdminPass(), ADMIN_PASS)) {
-                        mode = MODE_PRE_ENROLL;
+                        mode = MODE_ENTERING;
                     } else {
                         toast("Password Error!");
                         return;
                     }
-                } else if (mode == MODE_PRE_ENROLL) {
+                } else if (mode == MODE_ENTERING) {
                     if (mPresenter.isLegalEnrollInfo()) {
-                        mode = MODE_ENROLLING;
+                        mode = MODE_ENROLL;
                     } else {
                         toast("Name or ID or Phone Error!");
                         return;
                     }
-                } else if (mode == MODE_ENROLLING) {
+                } else if (mode == MODE_ENROLL) {
                     mPresenter.resetInfo();
-                    mode = MODE_PRE_ENROLL;
+                    mode = MODE_ENTERING;
                 }
                 refreshUI();
             }
@@ -240,12 +237,14 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
                     mode = MODE_CHECK_IN;
                     mPresenter.resetInfo();
                     refreshUI();
-                } else if (mode == MODE_PRE_ENROLL) {
-                    new EditDialog(this, R.string.dialog_title_url, InputType.TYPE_CLASS_TEXT) {
+                } else if (mode == MODE_ENTERING) {
+                    new IPEditDialog(this, R.string.dialog_title_url, InputType.TYPE_CLASS_TEXT) {
                         @Override
-                        public void onDialogOK(String text) {
-                            if (!TextUtils.isEmpty(text)) {
-                                mPresenter.setUploadUrl(text);
+                        public void onDialogOK(String ip, String port) {
+                            if (!TextUtils.isEmpty(ip) && !TextUtils.isEmpty(port)) {
+                                String url = "http://" + ip.trim() + ":" + port.trim() + "/StorageFinger/001";
+                                Logger.v(TAG, "url=" + url);
+                                mPresenter.setUploadUrl(url);
                             }
                         }
                     }.show();
@@ -296,5 +295,11 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
             }
             break;
         }
+    }
+
+    public void setBrightness(int brightness) {
+        WindowManager.LayoutParams lp = getWindow().getAttributes();
+        lp.screenBrightness = Float.valueOf(brightness) * (1f / 255f);
+        getWindow().setAttributes(lp);
     }
 }

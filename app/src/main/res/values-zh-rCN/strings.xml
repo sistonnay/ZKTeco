@@ -23,4 +23,6 @@
     <string name="db_add_template_fail">添加模板失败</string>
     <string name="identify_fail">1:N识别失败</string>
     <string name="identify_success">1:N识别成功</string>
+    <string name="text_ip_input_label">访问IP:</string>
+    <string name="text_port_input_label">访问端口:</string>
 </resources>

@@ -1,7 +1,10 @@
 package com.zkteco.autk.presenters;
 
 import android.content.SharedPreferences;
+import android.media.MediaPlayer;
+import android.media.RingtoneManager;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.text.TextUtils;
@@ -35,38 +38,41 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
 
     private static final boolean DECODE_AS_BITMAP = false;
 
-    private static final int MSG_ENROLL_GET_TEMPLATE_FAIL = 0;
-    private static final int MSG_ENROLL_GET_TEMPLATE_SUCCESS = 1;
-    private static final int MSG_ENROLL_FAIL = 2;
-    private static final int MSG_ENROLL_ADDED = 3;
-    private static final int MSG_ENROLL_SUCCESS = 4;
-    private static final int MSG_ENROLL_EXISTED = 5;
-    private static final int MSG_IDENTIFY_GET_TEMPLATE_FAIL = 6;
-    private static final int MSG_IDENTIFY_GET_TEMPLATE_SUCCESS = 7;
-    private static final int MSG_IDENTIFY_FAIL = 8;
-    private static final int MSG_IDENTIFY_SUCCESS = 9;
-    private static final int MSG_IDENTIFY_SUCCESS_ALERT = 10;
-    private static final int MSG_CONTINUE_IDENTIFY = 11;
-    private static final int MSG_CONTINUE_ENROLL = 12;
-    private static final int MSG_IDENTIFY_BEGIN = 13;
+    private static final int CAMERA_WIDTH = CameraIdentify.CAMERA_WIDTH;
+    private static final int CAMERA_HEIGHT = CameraIdentify.CAMERA_HEIGHT;
 
-    private final int CAMERA_WIDTH = CameraIdentify.CAMERA_WIDTH;
-    private final int CAMERA_HEIGHT = CameraIdentify.CAMERA_HEIGHT;
+    private static final int MSG_START_PREVIEW = 0x01;
+    private static final int MSG_ENROLL_EXISTED = 0x02;
+    private static final int MSG_ENROLL_SUCCESS = 0x03;
+    private static final int MSG_ENROLL_FAIL = 0x04;
+    private static final int MSG_IDENTIFY_SUCCESS = 0x06;
+    private static final int MSG_IDENTIFY_FAIL = 0x07;
+    private static final int MSG_UPDATE_UI = 0x08;
+    private static final int MSG_STOP_RINGSTONE = 0x09;
+
+    private static final int THREAD_MSG_IDENTIFY = 0x101;
+    private static final int THREAD_MSG_ENROLL = 0x102;
+
+    private Object mLock = new Object();
+
+    private boolean hasTextureListener = false;
 
     private SharedPreferences mSP = null;
     private DatabaseHelper mDbHelper = null;
 
     private EnrollActivity mActivity = null;
     private CameraIdentify mCamera = null;
-    private Object mLock = new Object();
-    private boolean hasTextureListener = false;
 
     private Handler mHandler;
-
-    private long preTimeMillis = 0;
-    private long currTimeMillis = 0;
+    private Handler mThreadHandler;
+    private FaceDetectTask mDetectTask;
 
     private String mAdminPass = null;
+
+    private long mLastRingtoneTime = 0;
+    private long mCurrRingtoneTime = 0;
+
+    private MediaPlayer mMediaPlayer = null;
 
     public void init() {
         mActivity = mView.get();
@@ -74,7 +80,21 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
         mCamera = new CameraIdentify(mActivity);
         mDbHelper = new DatabaseHelper(mActivity);
         mHandler = new H(mActivity.getMainLooper());
-        mHandler.sendEmptyMessageDelayed(MSG_IDENTIFY_BEGIN, 5000); //延时3秒开始人脸识别，防止启动时卡死
+        mDetectTask = new FaceDetectTask(mHandler);
+        mDetectTask.start();
+        mThreadHandler = mDetectTask.getHandler();
+        mHandler.sendEmptyMessageDelayed(MSG_START_PREVIEW, 2000); //延时2秒开始人脸识别，防止启动时卡死
+        mMediaPlayer = new MediaPlayer();
+    }
+
+    private void initMediaPlayer() {
+        try {
+            mMediaPlayer.reset();
+            mMediaPlayer.setDataSource(mActivity, RingtoneManager.getActualDefaultRingtoneUri(mActivity, RingtoneManager.TYPE_RINGTONE));
+            mMediaPlayer.prepare();
+        } catch (IOException e) {
+            Logger.e(TAG, e.getMessage());
+        }
     }
 
     private void tryStartCamera() {
@@ -120,12 +140,17 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
             mCamera.stopPreview();
             Logger.d(TAG, "activity onPause and camera preview stopped");
         }
+        mHandler.sendEmptyMessage(MSG_STOP_RINGSTONE);
     }
 
     public void destroy() {
         if (mCamera != null) {
             mCamera.release();
             Logger.d(TAG, "activity onDestroy and camera released");
+        }
+        if (mMediaPlayer != null) {
+            mMediaPlayer.stop();
+            mMediaPlayer.release();
         }
     }
 
@@ -202,111 +227,20 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
         mModel.getIdentifyInfo().reset();
     }
 
-    private void dbInsertEnrollInfo() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                long rowId = DatabaseUtils.getInstance().insertFaceEnrollInfo(mDbHelper, mModel.getIdentifyInfo());
-                if (rowId != -1) {
-                    mHandler.obtainMessage(MSG_ENROLL_SUCCESS).sendToTarget();
-                } else {
-                    mHandler.obtainMessage(MSG_ENROLL_FAIL).sendToTarget();
-                }
-            }
-        }).start();
-    }
-
-    private void dbInsertCheckInInfo() {
-//        new Thread(new Runnable() {
-//            @Override
-//            public synchronized void run() {
-        setJobNumber(DatabaseUtils.getInstance().insertFaceCheckInInfo(mDbHelper, getFaceId(), System.currentTimeMillis(), getUploadUrl()));
-        mHandler.obtainMessage(MSG_IDENTIFY_SUCCESS_ALERT).sendToTarget();
-//            }
-//        }).start();
-    }
-
     @Override
     public void onPreview(byte[] data) {
-        currTimeMillis = System.currentTimeMillis();
-        long deltaTime = currTimeMillis - preTimeMillis;
-        if (deltaTime < 1000) {
-            return;
-        }
         switch (mActivity.getMode()) {
-            case EnrollActivity.MODE_IDENTIFY: {
-                syncIdentify(data);
-            }
-            break;
-            case EnrollActivity.MODE_CHECK_IN:
-            case EnrollActivity.MODE_PRE_ENROLL:
-                return;
-            case EnrollActivity.MODE_ENROLLING: {
+            case EnrollActivity.MODE_IDENTIFY:
+                if (!mThreadHandler.hasMessages(THREAD_MSG_IDENTIFY)) {
+                    mThreadHandler.sendMessageDelayed(mThreadHandler.obtainMessage(THREAD_MSG_IDENTIFY, data), 500);
+                }
+                break;
+            case EnrollActivity.MODE_ENROLL: {
                 mActivity.setMode(EnrollActivity.MODE_NULL);
-                syncEnroll(data);
+                mThreadHandler.sendMessage(mThreadHandler.obtainMessage(THREAD_MSG_ENROLL, data));
             }
             break;
         }
-    }
-
-    private BitmapUtil.Yuv2Bitmap mYuv2Bitmap;
-
-    private byte[] getTemplate(byte[] data, int width, int height, boolean bmpMode) {
-        if (bmpMode) {
-            if (mYuv2Bitmap == null) {
-                mYuv2Bitmap = new BitmapUtil.Yuv2Bitmap(mActivity);
-            }
-            return ZKLiveFaceManager.getInstance().getTemplateFromBitmap(mYuv2Bitmap.convert(data, width, height, 90));
-        } else {
-            byte[] dst = new byte[data.length];
-            ImageConverter.rotateNV21Degree90(data, dst, width, height);//旋转90度，宽高对调
-            return ZKLiveFaceManager.getInstance().getTemplateFromNV21(dst, height, width);
-        }
-    }
-
-    private void syncIdentify(final byte[] data) {
-        byte[] template = getTemplate(data, CAMERA_WIDTH, CAMERA_HEIGHT, DECODE_AS_BITMAP);
-        if (template == null) {
-            mHandler.obtainMessage(MSG_IDENTIFY_GET_TEMPLATE_FAIL).sendToTarget();
-            return;
-        }
-        String id = ZKLiveFaceManager.getInstance().identify(template);
-        if (TextUtils.isEmpty(id)) {
-            mHandler.obtainMessage(MSG_IDENTIFY_FAIL).sendToTarget();
-        } else {
-            setFaceId(id);
-            mHandler.obtainMessage(MSG_IDENTIFY_SUCCESS).sendToTarget();
-        }
-    }
-
-    private void syncEnroll(final byte[] data) {
-        byte[] template = getTemplate(data, CAMERA_WIDTH, CAMERA_HEIGHT, DECODE_AS_BITMAP);
-        if (template == null) {
-            mHandler.obtainMessage(MSG_ENROLL_GET_TEMPLATE_FAIL).sendToTarget();
-            return;
-        }
-        String id = ZKLiveFaceManager.getInstance().identify(template);
-        if (id != null) {
-            setFaceId(id);
-            mHandler.obtainMessage(MSG_ENROLL_EXISTED).sendToTarget();
-        } else {
-            id = "FID_" + System.currentTimeMillis();
-            if (ZKLiveFaceManager.getInstance().dbAdd(id, template)) {
-                setFaceId(id);
-                setTemplate(template);
-                mHandler.obtainMessage(MSG_ENROLL_ADDED).sendToTarget();
-            } else {
-                mHandler.obtainMessage(MSG_ENROLL_FAIL).sendToTarget();
-            }
-        }
-    }
-
-    public void removeMessages() {
-        mHandler.removeMessages(MSG_CONTINUE_IDENTIFY);
-    }
-
-    public void continueIdentify() {
-        mHandler.sendEmptyMessage(MSG_CONTINUE_IDENTIFY);
     }
 
     class H extends Handler {
@@ -317,74 +251,167 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case MSG_IDENTIFY_BEGIN:
+                case MSG_START_PREVIEW:
                     mCamera.setCameraPreview(EnrollPresenter.this);
                     break;
-                case MSG_IDENTIFY_GET_TEMPLATE_FAIL:
-                    //mActivity.toast(mActivity.getString(R.string.extract_template_fail));
-                    break;
-                case MSG_IDENTIFY_GET_TEMPLATE_SUCCESS:
-                    break;
+                case MSG_IDENTIFY_SUCCESS: {
+                    mActivity.updateAlert(mActivity.getString(R.string.identify_success) + " 工号:" + getJobNumber());
+                    mCurrRingtoneTime = System.currentTimeMillis();
+                    if ((mCurrRingtoneTime - mLastRingtoneTime > 2500)) {
+                        mMediaPlayer.start();
+                        mLastRingtoneTime = mCurrRingtoneTime;
+                        sendEmptyMessageDelayed(MSG_STOP_RINGSTONE, 2000);
+                    }
+                    resetInfo();
+                    sendEmptyMessageDelayed(MSG_UPDATE_UI, 1000);
+                }
+                break;
                 case MSG_IDENTIFY_FAIL:
                     //mActivity.toast(mActivity.getString(R.string.identify_fail));
                     break;
-                case MSG_IDENTIFY_SUCCESS: {
-                    mActivity.setMode(EnrollActivity.MODE_IDENTIFY_HANDLE);
-                    dbInsertCheckInInfo();
-                }
-                break;
-                case MSG_IDENTIFY_SUCCESS_ALERT: {
-                    mActivity.updateAlert(mActivity.getString(R.string.identify_success) + " 工号:" + getJobNumber());
-                    sendEmptyMessageDelayed(MSG_CONTINUE_IDENTIFY, 1500);
-                }
-                break;
-                case MSG_ENROLL_GET_TEMPLATE_FAIL:
-                    mActivity.setMode(EnrollActivity.MODE_ENROLLING);
-                    //mActivity.toast(mActivity.getString(R.string.extract_template_fail));
+                case MSG_UPDATE_UI:
+                    mActivity.refreshUI();
                     break;
-                case MSG_ENROLL_GET_TEMPLATE_SUCCESS:
-                    break;
-                case MSG_ENROLL_FAIL: {
-                    mActivity.setMode(EnrollActivity.MODE_ENROLLING);
-                    //mActivity.toast(mActivity.getString(R.string.db_add_template_fail));
-                }
-                break;
                 case MSG_ENROLL_EXISTED: {
                     SimpleDialog alertDialog = new SimpleDialog(mActivity, "提示", "人脸已经注册过!") {
                         @Override
                         public void onDialogOK() {
-                            mHandler.obtainMessage(MSG_CONTINUE_ENROLL).sendToTarget();
+                            resetInfo();
+                            mActivity.setMode(EnrollActivity.MODE_ENTERING);
+                            obtainMessage(MSG_UPDATE_UI).sendToTarget();
                         }
                     };
                     alertDialog.disableCancel(true);
                     alertDialog.show();
                 }
                 break;
-                case MSG_ENROLL_ADDED:
-                    dbInsertEnrollInfo();
-                    break;
                 case MSG_ENROLL_SUCCESS: {
                     SimpleDialog alertDialog = new SimpleDialog(mActivity, "提示", "工号:" + getJobNumber() + "\n人脸注册成功!") {
                         @Override
                         public void onDialogOK() {
-                            obtainMessage(MSG_CONTINUE_ENROLL).sendToTarget();
+                            resetInfo();
+                            mActivity.setMode(EnrollActivity.MODE_ENTERING);
+                            obtainMessage(MSG_UPDATE_UI).sendToTarget();
                         }
                     };
                     alertDialog.disableCancel(true);
                     alertDialog.show();
                 }
-                case MSG_CONTINUE_ENROLL: {
-                    mActivity.setMode(EnrollActivity.MODE_PRE_ENROLL);
-                    resetInfo();
-                    mActivity.refreshUI();
+                break;
+                case MSG_ENROLL_FAIL: {
+                    mActivity.setMode(EnrollActivity.MODE_ENROLL);
+                    //mActivity.toast(mActivity.getString(R.string.db_add_template_fail));
                 }
                 break;
-                case MSG_CONTINUE_IDENTIFY: {
-                    mActivity.setMode(EnrollActivity.MODE_IDENTIFY);
-                    resetInfo();
-                    mActivity.refreshUI();
+                case MSG_STOP_RINGSTONE:{
+                    mMediaPlayer.stop();
+                    mMediaPlayer.seekTo(0);
+                    initMediaPlayer();
                 }
                 break;
+            }
+        }
+    }
+
+    class FaceDetectTask extends HandlerThread implements Handler.Callback {
+        private Object mLock = new Object();
+
+        private Handler mHandler;
+        private Handler mMainHandler;
+
+        private BitmapUtil.Yuv2Bitmap mYuv2Bitmap;
+
+        public FaceDetectTask(Handler handler) {
+            super("face-detect-thread");
+            mMainHandler = handler;
+        }
+
+        @Override
+        public void run() {
+            synchronized (mLock) {
+                super.run();
+            }
+        }
+
+        @Override
+        public boolean handleMessage(Message msg) {
+            switch (msg.what) {
+                case THREAD_MSG_IDENTIFY:
+                    syncIdentify((byte[]) msg.obj);
+                    break;
+                case THREAD_MSG_ENROLL:
+                    syncEnroll((byte[]) msg.obj);
+                    break;
+            }
+            return true;
+        }
+
+        public Handler getHandler() {
+            if (mHandler == null) {
+                if (getLooper() != null) {
+                    mHandler = new Handler(getLooper(), this);
+                }
+            }
+            return mHandler;
+        }
+
+        private void syncIdentify(final byte[] data) {
+            byte[] template = getTemplate(data, CAMERA_WIDTH, CAMERA_HEIGHT, DECODE_AS_BITMAP);
+            if (template == null) {
+                Logger.e(TAG, "template is null!");
+                return;
+            }
+            String id = ZKLiveFaceManager.getInstance().identify(template);
+            if (TextUtils.isEmpty(id)) {
+                mMainHandler.obtainMessage(MSG_IDENTIFY_FAIL).sendToTarget();
+            } else {
+                setFaceId(id);
+                synchronized (mLock) {
+                    setJobNumber(DatabaseUtils.getInstance().insertFaceCheckInInfo(mDbHelper, getFaceId(), System.currentTimeMillis(), getUploadUrl()));
+                    mMainHandler.obtainMessage(MSG_IDENTIFY_SUCCESS).sendToTarget();
+                }
+            }
+        }
+
+        private void syncEnroll(final byte[] data) {
+            byte[] template = getTemplate(data, CAMERA_WIDTH, CAMERA_HEIGHT, DECODE_AS_BITMAP);
+            if (template == null) {
+                Logger.e(TAG, "template is null!");
+                return;
+            }
+            String id = ZKLiveFaceManager.getInstance().identify(template);
+            if (id != null) {
+                setFaceId(id);
+                mMainHandler.obtainMessage(MSG_ENROLL_EXISTED).sendToTarget();
+            } else {
+                id = "FID_" + System.currentTimeMillis();
+                if (ZKLiveFaceManager.getInstance().dbAdd(id, template)) {
+                    setFaceId(id);
+                    setTemplate(template);
+                    synchronized (mLock) {
+                        long rowId = DatabaseUtils.getInstance().insertFaceEnrollInfo(mDbHelper, mModel.getIdentifyInfo());
+                        if (rowId != -1) {
+                            mMainHandler.obtainMessage(MSG_ENROLL_SUCCESS).sendToTarget();
+                        } else {
+                            mMainHandler.obtainMessage(MSG_ENROLL_FAIL).sendToTarget();
+                        }
+                    }
+                } else {
+                    mMainHandler.obtainMessage(MSG_ENROLL_FAIL).sendToTarget();
+                }
+            }
+        }
+
+        private byte[] getTemplate(byte[] data, int width, int height, boolean bmpMode) {
+            if (bmpMode) {
+                if (mYuv2Bitmap == null) {
+                    mYuv2Bitmap = new BitmapUtil.Yuv2Bitmap(mActivity);
+                }
+                return ZKLiveFaceManager.getInstance().getTemplateFromBitmap(mYuv2Bitmap.convert(data, width, height, 90));
+            } else {
+                byte[] dst = new byte[data.length];
+                ImageConverter.rotateNV21Degree90(data, dst, width, height);//旋转90度，宽高对调
+                return ZKLiveFaceManager.getInstance().getTemplateFromNV21(dst, height, width);
             }
         }
     }
