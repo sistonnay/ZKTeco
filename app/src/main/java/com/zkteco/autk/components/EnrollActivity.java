@@ -241,7 +241,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
                         @Override
                         public void onDialogOK(String ip, String port) {
                             if (!TextUtils.isEmpty(ip) && !TextUtils.isEmpty(port)) {
-                                String url = "http://" + ip.trim() + ":" + port.trim() + "/StorageFinger/001";
+                                String url = "http://" + ip.trim() + ":" + port.trim() + "/wms/StorageFinger/001";
                                 mPresenter.setUploadUrl(url);
                                 //Logger.v(TAG, "url=" + url);
                                 toast("url=" + url);

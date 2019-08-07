@@ -7,5 +7,5 @@ package com.zkteco.autk.utils;
 public class Utils {
     public static final String TAG = "AuthDemo";
     public static final boolean DEBUG = true;
-    public static final String URL = "http://192.168.1.21:9111/StorageFinger/001";
+    public static final String URL = "http://192.168.1.21:9111/wms/StorageFinger/001";
 }
