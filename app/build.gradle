@@ -10,12 +10,12 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-        externalNativeBuild {
-            cmake {
-                cppFlags ""
-                abiFilters "armeabi-v7a"
-            }
-        }
+//        externalNativeBuild {
+//            cmake {
+//                cppFlags ""
+//                abiFilters "armeabi-v7a"
+//            }
+//        }
     }
     buildTypes {
         release {
@@ -28,11 +28,11 @@ android {
             jniLibs.srcDirs = ['libs']
         }
     }
-    externalNativeBuild {
-        cmake {
-            path file('CMakeLists.txt')
-        }
-    }
+//    externalNativeBuild {
+//        cmake {
+//            path file('CMakeLists.txt')
+//        }
+//    }
 }
 
 dependencies {

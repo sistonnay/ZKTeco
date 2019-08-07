@@ -1,8 +1,8 @@
 package com.zkteco.autk.presenters;
 
 import android.content.SharedPreferences;
-import android.media.MediaPlayer;
-import android.media.RingtoneManager;
+import android.media.AudioManager;
+import android.media.SoundPool;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -72,7 +72,7 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
     private long mLastRingtoneTime = 0;
     private long mCurrRingtoneTime = 0;
 
-    private MediaPlayer mMediaPlayer = null;
+    private SoundPool mSoundPool = null;
 
     public void init() {
         mActivity = mView.get();
@@ -84,17 +84,8 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
         mDetectTask.start();
         mThreadHandler = mDetectTask.getHandler();
         mHandler.sendEmptyMessageDelayed(MSG_START_PREVIEW, 2000); //延时2秒开始人脸识别，防止启动时卡死
-        mMediaPlayer = new MediaPlayer();
-    }
-
-    private void initMediaPlayer() {
-        try {
-            mMediaPlayer.reset();
-            mMediaPlayer.setDataSource(mActivity, RingtoneManager.getActualDefaultRingtoneUri(mActivity, RingtoneManager.TYPE_RINGTONE));
-            mMediaPlayer.prepare();
-        } catch (IOException e) {
-            Logger.e(TAG, e.getMessage());
-        }
+        mSoundPool = new SoundPool(10, AudioManager.STREAM_SYSTEM, 5);
+        mSoundPool.load(mActivity, R.raw.identify,1);
     }
 
     private void tryStartCamera() {
@@ -148,9 +139,8 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
             mCamera.release();
             Logger.d(TAG, "activity onDestroy and camera released");
         }
-        if (mMediaPlayer != null) {
-            mMediaPlayer.stop();
-            mMediaPlayer.release();
+        if (mSoundPool != null) {
+            mSoundPool.release();
         }
     }
 
@@ -258,8 +248,8 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
                     mActivity.updateAlert(mActivity.getString(R.string.identify_success) + " 工号:" + getJobNumber());
                     mCurrRingtoneTime = System.currentTimeMillis();
                     if ((mCurrRingtoneTime - mLastRingtoneTime > 2500)) {
-                        mMediaPlayer.start();
                         mLastRingtoneTime = mCurrRingtoneTime;
+                        mSoundPool.play(1,1,1,0,0,1);
                         sendEmptyMessageDelayed(MSG_STOP_RINGSTONE, 2000);
                     }
                     resetInfo();
@@ -300,13 +290,11 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
                 break;
                 case MSG_ENROLL_FAIL: {
                     mActivity.setMode(EnrollActivity.MODE_ENROLL);
-                    //mActivity.toast(mActivity.getString(R.string.db_add_template_fail));
+                    mActivity.toast(mActivity.getString(R.string.db_add_template_fail));
                 }
                 break;
-                case MSG_STOP_RINGSTONE:{
-                    mMediaPlayer.stop();
-                    mMediaPlayer.seekTo(0);
-                    initMediaPlayer();
+                case MSG_STOP_RINGSTONE: {
+                    mSoundPool.stop(1);
                 }
                 break;
             }
@@ -377,6 +365,7 @@ public class EnrollPresenter extends BasePresenter<EnrollModel, EnrollActivity> 
             byte[] template = getTemplate(data, CAMERA_WIDTH, CAMERA_HEIGHT, DECODE_AS_BITMAP);
             if (template == null) {
                 Logger.e(TAG, "template is null!");
+                mMainHandler.obtainMessage(MSG_ENROLL_FAIL).sendToTarget();
                 return;
             }
             String id = ZKLiveFaceManager.getInstance().identify(template);

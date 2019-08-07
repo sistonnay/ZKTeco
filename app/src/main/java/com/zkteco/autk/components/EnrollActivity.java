@@ -226,7 +226,6 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
                         return;
                     }
                 } else if (mode == MODE_ENROLL) {
-                    mPresenter.resetInfo();
                     mode = MODE_ENTERING;
                 }
                 refreshUI();
@@ -243,8 +242,9 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
                         public void onDialogOK(String ip, String port) {
                             if (!TextUtils.isEmpty(ip) && !TextUtils.isEmpty(port)) {
                                 String url = "http://" + ip.trim() + ":" + port.trim() + "/StorageFinger/001";
-                                Logger.v(TAG, "url=" + url);
                                 mPresenter.setUploadUrl(url);
+                                //Logger.v(TAG, "url=" + url);
+                                toast("url=" + url);
                             }
                         }
                     }.show();
