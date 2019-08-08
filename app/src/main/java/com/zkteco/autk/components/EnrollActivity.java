@@ -12,7 +12,6 @@ import android.widget.TextView;
 
 import com.zkteco.autk.R;
 import com.zkteco.autk.presenters.EnrollPresenter;
-import com.zkteco.autk.utils.Logger;
 import com.zkteco.autk.utils.Utils;
 import com.zkteco.autk.views.OverlayView;
 
