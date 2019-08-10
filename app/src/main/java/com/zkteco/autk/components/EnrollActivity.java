@@ -236,6 +236,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
                     mPresenter.resetInfo();
                     refreshUI();
                 } else if (mode == MODE_ENTERING) {
+                    toast("当前网址：" + mPresenter.getUploadUrl());
                     new IPEditDialog(this, R.string.dialog_title_url, InputType.TYPE_CLASS_TEXT) {
                         @Override
                         public void onDialogOK(String ip, String port) {
@@ -243,7 +244,7 @@ public class EnrollActivity extends BaseActivity<EnrollPresenter> implements Vie
                                 String url = "http://" + ip.trim() + ":" + port.trim() + "/wms/StorageFinger/001";
                                 mPresenter.setUploadUrl(url);
                                 //Logger.v(TAG, "url=" + url);
-                                toast("url=" + url);
+                                toast("更新网址：" + url);
                             }
                         }
                     }.show();
